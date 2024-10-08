@@ -1,0 +1,5 @@
+/home/girish-pc/projecter/cmake-build-debug/CMakeFiles/server.dir
+/home/girish-pc/projecter/cmake-build-debug/CMakeFiles/client.dir
+/home/girish-pc/projecter/cmake-build-debug/CMakeFiles/adminCreator.dir
+/home/girish-pc/projecter/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/girish-pc/projecter/cmake-build-debug/CMakeFiles/rebuild_cache.dir
