@@ -8,7 +8,7 @@
 #include "db.h"
 #include "admin/admintasks.h"
 
-#define PORT 8088
+#define PORT 8085
 #define BUFFER_SIZE 10240
 
 void *handle_client(void *socket_desc) {
@@ -17,13 +17,14 @@ void *handle_client(void *socket_desc) {
     int read_size;
 
     const char *menu = "Select an option:\n"
-                        "1. Customer Login\n"
-                        "2. Employee Login\n"
-                        "3. Manager Login\n"
-                        "4. Admin Login\n";
+                       "1. Customer Login\n"
+                       "2. Employee Login\n"
+                       "3. Manager Login\n"
+                       "4. Admin Login\n";
     send(new_socket, menu, strlen(menu), 0);
 
-    while ((read_size = read(new_socket, buffer, BUFFER_SIZE)) > 0) {
+    while ((read_size = read(new_socket, buffer, BUFFER_SIZE - 1)) > 0) {
+        buffer[read_size] = '\0'; // Null-terminate the buffer
         int option = atoi(buffer);
 
         switch (option) {
@@ -52,27 +53,106 @@ void *handle_client(void *socket_desc) {
                 if (result == 1) {
                     write(new_socket, "Login successful.\n", 18);
                     const char *admin_menu = "Admin Options:\n"
-                                             "1. Add Employee\n";
+                                             "1. Add Employee\n"
+                                             "2. Modify Employee\n"
+                                             "3. Manage User Roles\n"
+                                             "4. Change Password\n";
                     send(new_socket, admin_menu, strlen(admin_menu), 0);
 
-                    read_size = read(new_socket, buffer, BUFFER_SIZE);
-                    int admin_option = atoi(buffer);
-                    if (admin_option == 1) {
-                        add_employee(new_socket);
-                    } else {
-                        write(new_socket, "Invalid option.\n", 16);
+                    while ((read_size = read(new_socket, buffer, BUFFER_SIZE - 1)) > 0) {
+                        buffer[read_size] = '\0'; // Null-terminate the buffer
+                        int admin_option = atoi(buffer);
+                        if (admin_option == 1) {
+                            // Collect employee details
+                            int id;
+                            char name[50], email[50], password[50];
+                            int is_manager;
+
+                            write(new_socket, "Enter Employee ID: ", 19);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            id = atoi(buffer);
+
+                            write(new_socket, "Enter Employee Name: ", 21);
+                            read(new_socket, name, 50);
+                            name[strcspn(name, "\n")] = 0;
+
+                            write(new_socket, "Enter Employee Email: ", 22);
+                            read(new_socket, email, 50);
+                            email[strcspn(email, "\n")] = 0;
+
+                            write(new_socket, "Enter Employee Password: ", 25);
+                            read(new_socket, password, 50);
+                            password[strcspn(password, "\n")] = 0;
+
+                            write(new_socket, "Is Manager (1 for Yes, 0 for No): ", 33);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            is_manager = atoi(buffer);
+
+                            add_employee(id, name, email, password, is_manager);
+                        } else if (admin_option == 2) {
+                            // Collect employee details
+                            int id;
+                            char name[50], email[50], password[50];
+                            int is_manager;
+
+                            write(new_socket, "Enter Employee ID: ", 19);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            id = atoi(buffer);
+
+                            write(new_socket, "Enter Employee Name: ", 21);
+                            read(new_socket, name, 50);
+                            name[strcspn(name, "\n")] = 0;
+
+                            write(new_socket, "Enter Employee Email: ", 22);
+                            read(new_socket, email, 50);
+                            email[strcspn(email, "\n")] = 0;
+
+                            write(new_socket, "Enter Employee Password: ", 25);
+                            read(new_socket, password, 50);
+                            password[strcspn(password, "\n")] = 0;
+
+                            write(new_socket, "Is Manager (1 for Yes, 0 for No): ", 33);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            is_manager = atoi(buffer);
+
+                            modify_employee(id, name, email, password, is_manager);
+                        } else if (admin_option == 3) {
+                            // Manage user roles
+                            int user_id, new_role;
+                            write(new_socket, "Enter User ID: ", 15);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            user_id = atoi(buffer);
+
+                            write(new_socket, "Enter New Role (1 for Manager, 0 for Employee): ", 48);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            new_role = atoi(buffer);
+
+                            if (manage_user_roles(user_id, new_role)) {
+                                write(new_socket, "User role updated successfully\n", 31);
+                            } else {
+                                write(new_socket, "Failed to update user role\n", 27);
+                            }
+                        } else if (admin_option == 4) {
+                            char new_password[50];
+                            write(new_socket, "Enter New Admin Password: ", 26);
+                            read(new_socket, new_password, 50);
+                            new_password[strcspn(new_password, "\n")] = 0; // Removing the newline character from input
+                            if (change_admin_password(email, new_password)) {
+                                write(new_socket, "Password changed successfully.\n", 31);
+                            } else {
+                                write(new_socket, "Failed to change password.\n", 27);
+                            }
+                        } else {
+                            write(new_socket, "Invalid option. Please select again\n", 37);
+                        }
+                        send(new_socket, admin_menu, strlen(admin_menu), 0); // Show menu again
                     }
-                } else if (result == -1) {
-                    write(new_socket, "Error: Could not open admin data file.\n", 40);
-                } else {
-                    write(new_socket, "Login failed: Incorrect email or password.\n", 43);
                 }
                 break;
             }
-
             default:
                 write(new_socket, "Invalid option. Please select again\n", 37);
-                bzero(new_socket, BUFFER_SIZE);
+                bzero(buffer, BUFFER_SIZE); // Clear the buffer
                 write(new_socket, menu, strlen(menu));
                 break;
         }
