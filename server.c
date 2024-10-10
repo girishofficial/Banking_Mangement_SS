@@ -4,8 +4,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include "db.h"
+#include "admin/admintasks.h"
 
-#define PORT 8081
+#define PORT 8088
 #define BUFFER_SIZE 10240
 
 void *handle_client(void *socket_desc) {
@@ -20,27 +23,58 @@ void *handle_client(void *socket_desc) {
                         "4. Admin Login\n";
     send(new_socket, menu, strlen(menu), 0);
 
-    while ((read_size = recv(new_socket, buffer, BUFFER_SIZE, 0)) > 0) {
-        buffer[read_size] = '\0';
+    while ((read_size = read(new_socket, buffer, BUFFER_SIZE)) > 0) {
         int option = atoi(buffer);
 
         switch (option) {
             case 1:
-                send(new_socket, "Customer Login\n", 23, 0);
-            break;
+                write(new_socket, "Customer Login\n", 23);
+                break;
             case 2:
-                send(new_socket, "Employee Login\n", 23, 0);
-            break;
+                write(new_socket, "Employee Login\n", 23);
+                break;
             case 3:
-                send(new_socket, "Manager Login\n", 23, 0);
-            break;
-            case 4:
-                send(new_socket, "Admin Login\n", 23, 0);
-            break;
+                write(new_socket, "Manager Login\n", 23);
+                break;
+            case 4: {
+                char email[50], password[50];
+                write(new_socket, "Enter Admin Email: ", 19);
+                read(new_socket, email, 50);
+                email[strcspn(email, "\n")] = 0; // Removing the newline character from input
+                printf("Received email: %s\n", email); // Debugging line
+
+                write(new_socket, "Enter Admin Password: ", 21);
+                read(new_socket, password, 50);
+                password[strcspn(password, "\n")] = 0; // Removing the newline character from input
+                printf("Received password: %s\n", password); // Debugging line
+
+                int result = verify_admin(email, password);
+                if (result == 1) {
+                    write(new_socket, "Login successful.\n", 18);
+                    const char *admin_menu = "Admin Options:\n"
+                                             "1. Add Employee\n";
+                    send(new_socket, admin_menu, strlen(admin_menu), 0);
+
+                    read_size = read(new_socket, buffer, BUFFER_SIZE);
+                    int admin_option = atoi(buffer);
+                    if (admin_option == 1) {
+                        add_employee(new_socket);
+                    } else {
+                        write(new_socket, "Invalid option.\n", 16);
+                    }
+                } else if (result == -1) {
+                    write(new_socket, "Error: Could not open admin data file.\n", 40);
+                } else {
+                    write(new_socket, "Login failed: Incorrect email or password.\n", 43);
+                }
+                break;
+            }
+
             default:
-                send(new_socket, "Invalid option. Please select again.\n", 37, 0);
-            send(new_socket, menu, strlen(menu), 0);
-            break;
+                write(new_socket, "Invalid option. Please select again\n", 37);
+                bzero(new_socket, BUFFER_SIZE);
+                write(new_socket, menu, strlen(menu));
+                break;
         }
     }
 

@@ -57,6 +57,14 @@ build CMakeFiles/server.dir/server.c.o: C_COMPILER__server_unscanned_Debug /home
   TARGET_COMPILE_PDB = CMakeFiles/server.dir/
   TARGET_PDB = server.pdb
 
+build CMakeFiles/server.dir/admin/admintasks.c.o: C_COMPILER__server_unscanned_Debug /home/girish-pc/projecter/admin/admintasks.c || cmake_object_order_depends_target_server
+  DEP_FILE = CMakeFiles/server.dir/admin/admintasks.c.o.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/server.dir
+  OBJECT_FILE_DIR = CMakeFiles/server.dir/admin
+  TARGET_COMPILE_PDB = CMakeFiles/server.dir/
+  TARGET_PDB = server.pdb
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target server
@@ -65,7 +73,7 @@ build CMakeFiles/server.dir/server.c.o: C_COMPILER__server_unscanned_Debug /home
 #############################################
 # Link the executable server
 
-build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o
+build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o CMakeFiles/server.dir/admin/admintasks.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/server.dir
   POST_BUILD = :
@@ -125,6 +133,14 @@ build CMakeFiles/adminCreator.dir/adminCreator.c.o: C_COMPILER__adminCreator_uns
   TARGET_COMPILE_PDB = CMakeFiles/adminCreator.dir/
   TARGET_PDB = adminCreator.pdb
 
+build CMakeFiles/adminCreator.dir/admin/admintasks.c.o: C_COMPILER__adminCreator_unscanned_Debug /home/girish-pc/projecter/admin/admintasks.c || cmake_object_order_depends_target_adminCreator
+  DEP_FILE = CMakeFiles/adminCreator.dir/admin/admintasks.c.o.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/adminCreator.dir
+  OBJECT_FILE_DIR = CMakeFiles/adminCreator.dir/admin
+  TARGET_COMPILE_PDB = CMakeFiles/adminCreator.dir/
+  TARGET_PDB = adminCreator.pdb
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target adminCreator
@@ -133,7 +149,7 @@ build CMakeFiles/adminCreator.dir/adminCreator.c.o: C_COMPILER__adminCreator_uns
 #############################################
 # Link the executable adminCreator
 
-build adminCreator: C_EXECUTABLE_LINKER__adminCreator_Debug CMakeFiles/adminCreator.dir/adminCreator.c.o
+build adminCreator: C_EXECUTABLE_LINKER__adminCreator_Debug CMakeFiles/adminCreator.dir/adminCreator.c.o CMakeFiles/adminCreator.dir/admin/admintasks.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/adminCreator.dir
   POST_BUILD = :
