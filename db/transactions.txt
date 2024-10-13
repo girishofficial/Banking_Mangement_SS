@@ -1,0 +1,5 @@
+Customer ID 0: deposit 500.00
+Customer ID 0: withdrawal 200.00
+Customer ID 0: deposit 500.00
+Customer ID 0: withdrawal 50.00
+Customer ID 0: deposit 600.00

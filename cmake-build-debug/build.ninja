@@ -61,6 +61,12 @@ build CMakeFiles/server.dir/admin/admintasks.c.o: C_COMPILER__server_unscanned_D
   OBJECT_DIR = CMakeFiles/server.dir
   OBJECT_FILE_DIR = CMakeFiles/server.dir/admin
 
+build CMakeFiles/server.dir/customer/customertask.c.o: C_COMPILER__server_unscanned_Debug /home/girish-pc/projecter/customer/customertask.c || cmake_object_order_depends_target_server
+  DEP_FILE = CMakeFiles/server.dir/customer/customertask.c.o.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/server.dir
+  OBJECT_FILE_DIR = CMakeFiles/server.dir/customer
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target server
@@ -69,7 +75,7 @@ build CMakeFiles/server.dir/admin/admintasks.c.o: C_COMPILER__server_unscanned_D
 #############################################
 # Link the executable server
 
-build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o CMakeFiles/server.dir/admin/admintasks.c.o
+build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o CMakeFiles/server.dir/admin/admintasks.c.o CMakeFiles/server.dir/customer/customertask.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/server.dir
   POST_BUILD = :
