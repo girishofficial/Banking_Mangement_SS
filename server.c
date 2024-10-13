@@ -8,7 +8,7 @@
 #include "db.h"
 #include "admin/admintasks.h"
 
-#define PORT 8085
+#define PORT 8082
 #define BUFFER_SIZE 10240
 
 void *handle_client(void *socket_desc) {
@@ -28,9 +28,84 @@ void *handle_client(void *socket_desc) {
         int option = atoi(buffer);
 
         switch (option) {
-            case 1:
-                write(new_socket, "Customer Login\n", 23);
+            case 1: {
+                char email[50], password[50];
+                write(new_socket, "Enter Customer Email: ", 22);
+                read(new_socket, email, 50);
+                email[strcspn(email, "\n")] = 0; // Removing the newline character from input
+
+                write(new_socket, "Enter Customer Password: ", 25);
+                read(new_socket, password, 50);
+                password[strcspn(password, "\n")] = 0; // Removing the newline character from input
+
+                int result = verify_customer(email, password);
+                if (result == 1) {
+                    write(new_socket, "Login successful.\n", 18);
+                    const char *customer_menu = "Customer Options:\n"
+                                                "1. View Account Balance\n"
+                                                "2. Deposit Money\n"
+                                                "3. Withdraw Money\n"
+                                                "4. Transfer Funds\n"
+                                                "5. Apply for a Loan\n"
+                                                "6. Change Password\n"
+                                                "7. Add Feedback\n"
+                                                "8. View Transaction History\n"
+                                                "9. Logout\n"
+                                                "10. Exit\n";
+                    send(new_socket, customer_menu, strlen(customer_menu), 0);
+
+                    while ((read_size = read(new_socket, buffer, BUFFER_SIZE - 1)) > 0) {
+                        buffer[read_size] = '\0'; // Null-terminate the buffer
+                        int customer_option = atoi(buffer);
+
+                        switch (customer_option) {
+                            case 1:
+                                // View Account Balance code
+                                break;
+                            case 2:
+                                // Deposit Money code
+                                break;
+                            case 3:
+                                // Withdraw Money code
+                                break;
+                            case 4:
+                                // Transfer Funds code
+                                break;
+                            case 5:
+                                // Apply for a Loan code
+                                break;
+                            case 6:
+                                // Change Password code
+                                break;
+                            case 7:
+                                // Add Feedback code
+                                break;
+                            case 8:
+                                // View Transaction History code
+                                break;
+                            case 9:
+                                write(new_socket, "Logged out successfully.\n", 26);
+                                bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                usleep(100); // Add a slight delay to ensure data is fully sent before the next action
+                                send(new_socket, menu, strlen(menu), 0);
+                                break;
+                            case 10:
+                                write(new_socket, "Exiting...\n", 11);
+                                close(new_socket);
+                                free(socket_desc);
+                                return NULL;
+                            default:
+                                write(new_socket, "Invalid option. Please select again\n", 37);
+                        }
+                    }
+                } else {
+                    write(new_socket, "Login failed. Invalid credentials.\n", 35);
+                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                    usleep(100); // Ensure the message is fully sent
+                    send(new_socket, menu, strlen(menu), 0); // Show main menu again
+                }
                 break;
+            }
             case 2:
                 write(new_socket, "Employee Login\n", 23);
                 break;
@@ -56,7 +131,9 @@ void *handle_client(void *socket_desc) {
                                              "1. Add Employee\n"
                                              "2. Modify Employee\n"
                                              "3. Manage User Roles\n"
-                                             "4. Change Password\n";
+                                             "4. Change Password\n"
+                                             "5. Add Customer\n"
+                                             "6. Logout\n";
                     send(new_socket, admin_menu, strlen(admin_menu), 0);
 
                     while ((read_size = read(new_socket, buffer, BUFFER_SIZE - 1)) > 0) {
@@ -142,18 +219,70 @@ void *handle_client(void *socket_desc) {
                             } else {
                                 write(new_socket, "Failed to change password.\n", 27);
                             }
+                            send(new_socket, admin_menu, strlen(admin_menu), 0); // Show menu again
+                        }else if (admin_option == 5) {
+                            // Add customer code
+                            int id;
+                            char name[50], email[50], phone[20], password[50];
+                            double balance;
+                            int account_active;
+
+                            write(new_socket, "Enter Customer ID: ", 19);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            id = atoi(buffer);
+
+                            write(new_socket, "Enter Customer Name: ", 21);
+                            read(new_socket, name, 50);
+                            name[strcspn(name, "\n")] = 0;
+
+                            write(new_socket, "Enter Customer Email: ", 22);
+                            read(new_socket, email, 50);
+                            email[strcspn(email, "\n")] = 0;
+
+                            write(new_socket, "Enter Customer Phone: ", 22);
+                            read(new_socket, phone, 20);
+                            phone[strcspn(phone, "\n")] = 0;
+
+                            write(new_socket, "Enter Customer Password: ", 25);
+                            read(new_socket, password, 50);
+                            password[strcspn(password, "\n")] = 0;
+
+                            write(new_socket, "Enter Customer Balance: ", 24);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            balance = atof(buffer);
+
+                            write(new_socket, "Is Account Active (1 for Yes, 0 for No): ", 41);
+                            read(new_socket, buffer, BUFFER_SIZE);
+                            account_active = atoi(buffer);
+
+                            add_customer(id, name, email, phone, password, balance, account_active);
+                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                            usleep(100); // Add a slight delay to ensure data is fully sent before the next action
+                            send(new_socket, admin_menu, strlen(admin_menu), 0);
+                        }
+                        else if (admin_option == 6) {
+                            write(new_socket, "Logged out successfully.\n", 26);
+                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                            usleep(100); // Add a slight delay to ensure data is fully sent before the next action
+                            send(new_socket, menu, strlen(menu), 0);
+                            break;
                         } else {
                             write(new_socket, "Invalid option. Please select again\n", 37);
                         }
-                        send(new_socket, admin_menu, strlen(admin_menu), 0); // Show menu again
                     }
+                } else {
+                    write(new_socket, "Login failed. Invalid credentials.\n", 35);
+                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                    usleep(100); // Ensure the message is fully sent
+                    send(new_socket, menu, strlen(menu), 0); // Show main menu again
                 }
                 break;
             }
             default:
                 write(new_socket, "Invalid option. Please select again\n", 37);
                 bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                write(new_socket, menu, strlen(menu));
+                usleep(100); // Add delay to ensure data is sent properly
+                send(new_socket, menu, strlen(menu), 0);
                 break;
         }
     }

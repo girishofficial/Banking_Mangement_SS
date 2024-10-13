@@ -153,3 +153,25 @@ int change_admin_password(const char *email, const char *new_password) {
 
     return found;
 }
+
+int add_customer(int id, const char *name, const char *email, const char *phone, const char *password, double balance, int account_active) {
+    const char* file_path = "/home/girish-pc/projecter/db/customers.txt";
+    FILE *file = fopen(file_path, "a");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    Customer customer;
+    customer.id = id;
+    strncpy(customer.name, name, sizeof(customer.name) - 1);
+    strncpy(customer.email, email, sizeof(customer.email) - 1);
+    strncpy(customer.phone, phone, sizeof(customer.phone) - 1);
+    strncpy(customer.password, password, sizeof(customer.password) - 1);
+    customer.balance = balance;
+    customer.account_active = account_active;
+
+    fwrite(&customer, sizeof(Customer), 1, file);
+    fclose(file);
+    return 1;
+}
