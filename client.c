@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#define PORT 8087
+#define PORT 8085
 #define BUFFER_SIZE 10240
 
 int main() {
@@ -45,6 +45,18 @@ int main() {
         bzero(server_reply, BUFFER_SIZE);
         if (write(sock, message, strlen(message)) < 0) {
             return 1;
+        }
+
+        if (strncmp(message, "10", 2) == 0) {
+            printf("Exiting...\n");
+            close(sock);
+            break;
+        }
+
+        if (strncmp(message, "9", 1) == 0) {
+            printf("Exiting...\n");
+            close(sock);
+            break;
         }
 
         bzero(server_reply, BUFFER_SIZE);

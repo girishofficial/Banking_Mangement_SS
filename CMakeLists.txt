@@ -11,6 +11,10 @@ add_executable(server server.c
         customer/customertask.h
         customer/customertask.c
         customer/customertask.c
+        employee/emptask.c
+        employee/emptask.h
+        manager/managertask.c
+        manager/managertask.h
 
 )
 add_executable(client client.c)

@@ -53,11 +53,10 @@ typedef struct {
 
 // Define a struct for Transaction
 typedef struct {
-    int transaction_id;
-    int account_id;
+    int id;
+    int customer_id;
     double amount;
-    char type[10]; // "deposit", "withdrawal", "transfer"
-    char date[20];
+    char date[20]; // Assuming date is stored as a string in the format "YYYY-MM-DD"
 } Transaction;
 
 // Define a struct for LoanApplication

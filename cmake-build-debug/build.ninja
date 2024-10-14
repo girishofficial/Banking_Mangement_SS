@@ -67,6 +67,18 @@ build CMakeFiles/server.dir/customer/customertask.c.o: C_COMPILER__server_unscan
   OBJECT_DIR = CMakeFiles/server.dir
   OBJECT_FILE_DIR = CMakeFiles/server.dir/customer
 
+build CMakeFiles/server.dir/employee/emptask.c.o: C_COMPILER__server_unscanned_Debug /home/girish-pc/projecter/employee/emptask.c || cmake_object_order_depends_target_server
+  DEP_FILE = CMakeFiles/server.dir/employee/emptask.c.o.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/server.dir
+  OBJECT_FILE_DIR = CMakeFiles/server.dir/employee
+
+build CMakeFiles/server.dir/manager/managertask.c.o: C_COMPILER__server_unscanned_Debug /home/girish-pc/projecter/manager/managertask.c || cmake_object_order_depends_target_server
+  DEP_FILE = CMakeFiles/server.dir/manager/managertask.c.o.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/server.dir
+  OBJECT_FILE_DIR = CMakeFiles/server.dir/manager
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target server
@@ -75,7 +87,7 @@ build CMakeFiles/server.dir/customer/customertask.c.o: C_COMPILER__server_unscan
 #############################################
 # Link the executable server
 
-build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o CMakeFiles/server.dir/admin/admintasks.c.o CMakeFiles/server.dir/customer/customertask.c.o
+build server: C_EXECUTABLE_LINKER__server_Debug CMakeFiles/server.dir/server.c.o CMakeFiles/server.dir/admin/admintasks.c.o CMakeFiles/server.dir/customer/customertask.c.o CMakeFiles/server.dir/employee/emptask.c.o CMakeFiles/server.dir/manager/managertask.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/server.dir
   POST_BUILD = :
