@@ -26,7 +26,7 @@ typedef struct {
     char name[50];
     char email[50];
     char password[50];
-    int is_manager;
+    int is_manager; // 1 for manager, 0 for non-manager
 } Employee;
 
 // Define a struct for Manager

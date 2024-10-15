@@ -11,7 +11,7 @@
 #include "/home/girish-pc/projecter/employee/emptask.h"
 #include "/home/girish-pc/projecter/manager/managertask.h"
 
-#define PORT 8085
+#define PORT 8087
 #define BUFFER_SIZE 102400
 
 void *handle_client(void *socket_desc) {
@@ -456,19 +456,101 @@ void *handle_client(void *socket_desc) {
 
                         switch (manager_option) {
                             case 1:
-                                // Code to activate/deactivate customer accounts
-                                write(new_socket, "Activate/Deactivate Customer Accounts\n", 39);
-                                // Implement the functionality here
-                                break;
+                                int num_customers = list_customers();
+                                    if (num_customers == 0) {
+                                        send(new_socket, "No customers found.\n", 20, 0);
+                                        break;
+                                    }
+
+                                    char buffer[BUFFER_SIZE];
+                                    write(new_socket, "Select a customer to modify (1-N): ", 35);
+                                    read(new_socket, buffer, BUFFER_SIZE);
+                                    int customer_index = atoi(buffer);
+
+                                    if (customer_index < 1 || customer_index > num_customers) {
+                                        send(new_socket, "Invalid selection.\n", 19, 0);
+                                        break;
+                                    }
+
+                                    // Retrieve and display customer details
+                                    Customer customer;
+                                    if (get_customer_details(customer_index, &customer)) {
+                                        char customer_details[BUFFER_SIZE];
+                                        snprintf(customer_details, BUFFER_SIZE,
+                                                 "Customer Details:\nName: %s\nEmail: %s\nPhone: %s\nBalance: %.2f\nAccount Active: %d\n",
+                                                 customer.name, customer.email, customer.phone, customer.balance, customer.account_active);
+                                        send(new_socket, customer_details, strlen(customer_details), 0);
+                                    } else {
+                                        send(new_socket, "Failed to retrieve customer details.\n", 36, 0);
+                                        break;
+                                    }
+
+                                    // Provide options to edit customer details
+                                    const char *edit_menu = "Edit Options:\n1. Name\n2. Email\n3. Phone\n4. Balance\n5. Account Active\n6. Cancel\nSelect an option (1-6): ";
+                                    send(new_socket, edit_menu, strlen(edit_menu), 0);
+                                    read(new_socket, buffer, BUFFER_SIZE);
+                                    int edit_option = atoi(buffer);
+
+                                    switch (edit_option) {
+                                        case 1:
+                                            write(new_socket, "Enter new name: ", 16);
+                                            read(new_socket, customer.name, sizeof(customer.name));
+                                            customer.name[strcspn(customer.name, "\n")] = 0;
+                                            break;
+                                        case 2:
+                                            write(new_socket, "Enter new email: ", 17);
+                                            read(new_socket, customer.email, sizeof(customer.email));
+                                            customer.email[strcspn(customer.email, "\n")] = 0;
+                                            break;
+                                        case 3:
+                                            write(new_socket, "Enter new phone: ", 17);
+                                            read(new_socket, customer.phone, sizeof(customer.phone));
+                                            customer.phone[strcspn(customer.phone, "\n")] = 0;
+                                            break;
+                                        case 4:
+                                            write(new_socket, "Enter new balance: ", 19);
+                                            read(new_socket, buffer, BUFFER_SIZE);
+                                            customer.balance = atof(buffer);
+                                            break;
+                                        case 5:
+                                            write(new_socket, "Is account active (1 for Yes, 0 for No): ", 41);
+                                            read(new_socket, buffer, BUFFER_SIZE);
+                                            customer.account_active = atoi(buffer);
+                                            break;
+                                        case 6:
+                                            send(new_socket, "Edit cancelled.\n", 16, 0);
+                                            break;
+                                        default:
+                                            send(new_socket, "Invalid option.\n", 16, 0);
+                                            break;
+                                    }
+
+                                    if (edit_option >= 1 && edit_option <= 5) {
+                                        if (modify_customer_details(customer_index, &customer)) {
+                                            send(new_socket, "Customer details updated successfully.\n", 39, 0);
+                                        } else {
+                                            send(new_socket, "Failed to update customer details.\n", 34, 0);
+                                        }
+                                    }
+
+                                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                    usleep(100); // Add a slight delay to ensure data is fully sent before the next action
+                                    send(new_socket,manager_menu, strlen(manager_menu), 0);
+                                    break;
                             case 2:
                                 // Code to assign loan application processes to employees
                                 write(new_socket, "Assign Loan Application Processes to Employees\n", 49);
                                 // Implement the functionality here
                                 break;
                             case 3:
-                                // Code to review customer feedback
-                                write(new_socket, "Review Customer Feedback\n", 26);
-                                // Implement the functionality here
+                                if (review_customer_feedback(new_socket)) {
+                                    send(new_socket, "Feedback displayed successfully.\n", 33, 0);
+                                } else {
+                                    send(new_socket, "Failed to display feedback.\n", 28, 0);
+                                }
+                                bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                usleep(100); // Add a slight delay to ensure data is fully sent before the next action
+                                send(new_socket, manager_menu, strlen(manager_menu), 0);
                                 break;
                             case 4:
                                 // Code to change password
@@ -554,6 +636,9 @@ void *handle_client(void *socket_desc) {
                             is_manager = atoi(buffer);
 
                             add_employee(id, name, email, password, is_manager);
+                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                            usleep(100);
+                            send(new_socket, admin_menu, strlen(admin_menu), 0);
                         } else if (admin_option == 2) {
                             // Collect employee details
                             int id;
