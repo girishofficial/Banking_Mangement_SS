@@ -8,6 +8,8 @@
 
 
 #define BUFFER_SIZE 10240
+#define LOGGED_IN_FILE "/home/girish-pc/projecter/db/logged_in.txt"
+#include "../customer/customertask.h"
 
 int get_customer_details(int customer_index, Customer *customer) {
     const char *file_path = "/home/girish-pc/projecter/db/customers.txt";
@@ -59,7 +61,7 @@ int verify_employee(int employee_id, const char *password) {
 
     Employee emp;
     while (read(fd, &emp, sizeof(Employee)) > 0) {
-        if (emp.id == employee_id && strcmp(emp.password, password) == 0) {
+        if (emp.id == employee_id && strcmp(emp.password, password) == 0 && emp.is_manager == 0){
             close(fd);
             return 1; // Verification successful
         }
@@ -78,7 +80,7 @@ int add_new_customer(int id, const char *name, const char *email, const char *ph
     }
 
     Customer customer;
-    customer.id = id;
+    customer.id= id;
     strncpy(customer.name, name, sizeof(customer.name) - 1);
     strncpy(customer.email, email, sizeof(customer.email) - 1);
     strncpy(customer.phone, phone, sizeof(customer.phone) - 1);
@@ -206,3 +208,132 @@ int change_employee_password(int employee_id, const char *new_password) {
     close(fd);
     return 0; // Employee not found
 }
+
+int is_employee_logged_in(const char *email) {
+    int fd = open(LOGGED_IN_FILE, O_RDONLY | O_CREAT, 0644);
+    if (fd == -1) {
+        perror("Failed to open logged in file");
+        return 0;
+    }
+
+    char line[256];
+    ssize_t bytes_read;
+    while ((bytes_read = read(fd, line, sizeof(line) - 1)) > 0) {
+        line[bytes_read] = '\0'; // Null-terminate the buffer
+        line[strcspn(line, "\n")] = 0; // Remove newline character
+        if (strcmp(line, email) == 0) {
+            close(fd);
+            return 1; // Employee is already logged in
+        }
+    }
+
+    close(fd);
+    return 0; // Employee is not logged in
+}
+
+int log_in_employee(const char *email) {
+    int fd = open(LOGGED_IN_FILE, O_WRONLY | O_APPEND | O_CREAT, 0644);
+    if (fd == -1) {
+        perror("Failed to open logged in file");
+        return 0;
+    }
+
+    dprintf(fd, "%s\n", email);
+    close(fd);
+    return 1;
+}
+
+int log_out_employee(const char *email) {
+    FILE *fd = fopen(LOGGED_IN_FILE, "r");
+    if (fd == NULL) {
+        perror("Failed to open logged in file");
+        return 0;
+    }
+
+    FILE *temp_fd = fopen("/home/girish-pc/projecter/db/temp.txt", "w+");
+    if (temp_fd == NULL) {
+        perror("Failed to open temp file");
+        fclose(fd);
+        return 0;
+    }
+
+    char line[256];
+    int found = 0;
+    while (fgets(line, sizeof(line), fd) != NULL) {
+        line[strcspn(line, "\n")] = 0; // Remove newline character
+        if (strcmp(line, email) != 0) {
+            fprintf(temp_fd, "%s\n", line);
+        } else {
+            found = 1;
+        }
+    }
+
+    fclose(fd);
+    fclose(temp_fd);
+
+    if (remove(LOGGED_IN_FILE) != 0) {
+        perror("Failed to remove logged in file");
+        return 0;
+    }
+
+    if (rename("/home/girish-pc/projecter/db/temp.txt", LOGGED_IN_FILE) != 0) {
+        perror("Failed to rename temp file");
+        return 0;
+    }
+
+    return found;
+}
+
+int process_loan(int loan_id, int employee_id, const char *status) {
+    const char* file_path = "/home/girish-pc/projecter/db/loans.txt";
+    int fd = open(file_path, O_RDWR);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    LoanApplication loan;
+    while (read(fd, &loan, sizeof(LoanApplication)) > 0) {
+        if (loan.loan_id == loan_id) {
+            if (loan.assigned_employee_id != employee_id) {
+                close(fd);
+                return 0; // Employee is not authorized to process this loan
+            }
+            lseek(fd, -sizeof(LoanApplication), SEEK_CUR);
+            strncpy(loan.status, status, sizeof(loan.status) - 1);
+            loan.status[sizeof(loan.status) - 1] = '\0';
+            write(fd, &loan, sizeof(LoanApplication));
+            close(fd);
+
+            // If the loan is approved, deposit the loan amount to the customer's account
+            if (strcmp(status, "approved") == 0) {
+                deposit_money(loan.customer_id, loan.amount);
+            }
+            return 1;
+        }
+    }
+
+    close(fd);
+    return 0; // Loan not found
+}
+
+int show_all_loans(int new_socket) {
+    const char* file_path = "/home/girish-pc/projecter/db/loans.txt";
+    int fd = open(file_path, O_RDONLY);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    LoanApplication loan;
+    char buffer[256];
+    while (read(fd, &loan, sizeof(LoanApplication)) > 0) {
+        snprintf(buffer, sizeof(buffer), "Loan ID: %d, Customer ID: %d, Amount: %.2f, Status: %s, Assigned Employee ID: %d\n",
+                 loan.loan_id, loan.customer_id, loan.amount, loan.status, loan.assigned_employee_id);
+        send(new_socket, buffer, strlen(buffer), 0);
+    }
+
+    close(fd);
+    return 1;
+}
+

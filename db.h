@@ -14,7 +14,6 @@ typedef struct {
     char name[50];
     char email[50];
     char phone[15];
-    int customer_id;
     char password[50];
     double balance;
     int account_active;

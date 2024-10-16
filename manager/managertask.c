@@ -8,8 +8,10 @@
 #include <unistd.h>
 #include "../db.h"
 #include <sys/socket.h>
+#include "../employee/emptask.h"
 
 #define BUFFER_SIZE 10240
+#define LOGGED_IN_FILE "/home/girish-pc/projecter/db/logged_in.txt"
 
 
 int verify_manager(const char *email, const char *password) {
@@ -82,4 +84,32 @@ int review_customer_feedback(int socket) {
 
     close(fd);
     return 1;
+}
+
+
+int assign_employee_to_loan(int loan_id, int employee_id) {
+    const char* file_path = "/home/girish-pc/projecter/db/loans.txt";
+    int fd = open(file_path, O_RDWR);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    LoanApplication loan;
+    while (read(fd, &loan, sizeof(LoanApplication)) > 0) {
+        if (loan.loan_id == loan_id) {
+            lseek(fd, -sizeof(LoanApplication), SEEK_CUR);
+            loan.assigned_employee_id = employee_id;
+            if (write(fd, &loan, sizeof(LoanApplication)) == -1) {
+                perror("Failed to write to file");
+                close(fd);
+                return 0;
+            }
+            close(fd);
+            return 1; // Assignment successful
+        }
+    }
+
+    close(fd);
+    return 0; // Loan not found
 }

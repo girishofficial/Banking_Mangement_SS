@@ -13,4 +13,9 @@ int modify_customer_details(int customer_index, Customer *updated_customer);
 int get_customer_details(int customer_index, Customer *customer);
 int view_customer_transactions(int customer_id, int socket);
 int change_employee_password(int employee_id, const char *new_password);
+int is_employee_logged_in(const char *email);
+int log_in_employee(const char *email);
+int log_out_employee(const char *email);
+int process_loan(int loan_id, int employee_id, const char *status);
+
 #endif //EMPTASK_H

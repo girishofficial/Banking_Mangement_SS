@@ -175,3 +175,4 @@ int add_customer(int id, const char *name, const char *email, const char *phone,
     fclose(file);
     return 1;
 }
+
