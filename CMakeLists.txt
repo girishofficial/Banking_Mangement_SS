@@ -15,6 +15,8 @@ add_executable(server server.c
         employee/emptask.h
         manager/managertask.c
         manager/managertask.h
+        login/login.c
+        login/login.h
 
 )
 add_executable(client client.c)

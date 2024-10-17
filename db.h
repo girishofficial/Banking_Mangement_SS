@@ -17,6 +17,7 @@ typedef struct {
     char password[50];
     double balance;
     int account_active;
+    int logged_in;
 } Customer;
 
 // Define a struct for Employee
@@ -26,6 +27,7 @@ typedef struct {
     char email[50];
     char password[50];
     int is_manager; // 1 for manager, 0 for non-manager
+    int logged_in;
 } Employee;
 
 // Define a struct for Manager
@@ -34,6 +36,7 @@ typedef struct {
     char name[50];
     char email[50];
     char password[50];
+    int logged_in;
 } Manager;
 
 // Define a struct for Admin
@@ -41,6 +44,7 @@ typedef struct {
     char name[50];
     char email[50];
     char password[50];
+    int logged_in;
 } Admin;
 
 // Define a struct for Account

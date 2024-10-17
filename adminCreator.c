@@ -19,8 +19,11 @@ void add_admin() {
     printf("Enter Password: ");
     scanf(" %49[^\n]", admin.password);  // Read a line of text with spaces
 
-    // Write the admin email and password to the file
-    dprintf(fd, "%s,%s\n", admin.email, admin.password);
+    // Initialize logged_in to 0
+    admin.logged_in = 0;
+
+    // Write the admin email, password, and logged_in status to the file
+    dprintf(fd, "%s,%s,%d\n", admin.email, admin.password, admin.logged_in);
     printf("Admin added successfully!\n");
 
     close(fd);

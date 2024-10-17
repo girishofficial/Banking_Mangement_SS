@@ -9,16 +9,25 @@
 int verify_admin(const char *email, const char *password) {
     const char* file_path = "/home/girish-pc/projecter/db/admins.txt";
     char stored_email[50], stored_password[50];
-    FILE *file = fopen(file_path, "r");
+    int logged_in;
+    FILE *file = fopen(file_path, "r+"); // Open the file in read-write mode
     if (file == NULL) {
         perror("Failed to open file db/admins.txt");
         return -1;
     }
 
-    while (fscanf(file, "%49[^,],%49s\n", stored_email, stored_password) != EOF) {
+    long pos;
+    while ((pos = ftell(file)) != -1 && fscanf(file, "%49[^,],%49[^,],%d\n", stored_email, stored_password, &logged_in) != EOF) {
         if (strcmp(stored_email, email) == 0 && strcmp(stored_password, password) == 0) {
+            if (logged_in == 1) {
+                fclose(file);
+                return 0; // Already logged in
+            }
+            logged_in = 1; // Set logged_in to 1
+            fseek(file, pos, SEEK_SET); // Move the file pointer back to the start of the current record
+            fprintf(file, "%s,%s,%d\n", stored_email, stored_password, logged_in); // Update the record
             fclose(file);
-            return 1; // Record found
+            return 1; // Record found and updated
         }
     }
 

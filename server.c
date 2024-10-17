@@ -10,8 +10,9 @@
 #include "/home/girish-pc/projecter/customer/customertask.h"
 #include "/home/girish-pc/projecter/employee/emptask.h"
 #include "/home/girish-pc/projecter/manager/managertask.h"
+#include "login/login.h"
 
-#define PORT 807044
+#define PORT 8088
 #define BUFFER_SIZE 102400
 
 void *handle_client(void *socket_desc) {
@@ -19,7 +20,9 @@ void *handle_client(void *socket_desc) {
     char buffer[BUFFER_SIZE];
     int read_size;
 
-    const char *menu = "Select an option:\n"
+    const char *menu = "Welcome to the Childrens Bank of India\n"
+                       "=======================================================\n"
+                       "Select an option:\n"
                        "1. Customer Login\n"
                        "2. Employee Login\n"
                        "3. Manager Login\n"
@@ -40,194 +43,202 @@ void *handle_client(void *socket_desc) {
                 write(new_socket, "Enter Customer Password: ", 25);
                 read(new_socket, password, 50);
                 password[strcspn(password, "\n")] = 0; // Removing the newline character from input
-
                 int customer_id = get_customer_id_from_email(email);
                 if (customer_id == -1) {
-                    write(new_socket, "Login failed. Invalid credentials.\n", 35);
-                } else {
-                    int result = verify_customer(customer_id, password);
-                    if (result == 1) {
-                        write(new_socket, "Login successful.\n", 18);
-                        const char *customer_menu = "Customer Options:\n"
-                                                    "1. View Account Balance\n"
-                                                    "2. Deposit Money\n"
-                                                    "3. Withdraw Money\n"
-                                                    "4. Transfer Funds\n"
-                                                    "5. Apply for a Loan\n"
-                                                    "6. Change Password\n"
-                                                    "7. Add Feedback\n"
-                                                    "8. View Transaction History\n"
-                                                    "9. Logout\n"
-                                                    "10. Exit\n";
-                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-
-                        while ((read_size = read(new_socket, buffer, BUFFER_SIZE - 1)) > 0) {
-                            buffer[read_size] = '\0'; // Null-terminate the buffer
-                            int customer_option = atoi(buffer);
-
-                            switch (customer_option) {
-                                case 1:
-                                    double balance = view_account_balance(customer_id);
-                                    if(balance >= 0) {
-                                        char balance_msg[100];
-                                        sprintf(balance_msg, "Account Balance: %.2f\n", balance);
-                                        send(new_socket, balance_msg, strlen(balance_msg), 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    }else {
-                                        send(new_socket, "Failed to fetch account balance\n", 32, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    }
-                                    break;
-                                case 2:
-                                    double amount;
-                                    write(new_socket, "Enter amount to deposit: ", 25);
-                                    read(new_socket, buffer, BUFFER_SIZE);
-                                    amount = atof(buffer);
-
-                                    if (deposit_money(customer_id, amount)) {
-                                        send(new_socket, "Deposit successful.\n", 20, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    } else {
-                                        send(new_socket, "Failed to deposit money.\n", 25, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    }
-                                    break;
-                                case 3:
-                                    double amt;
-                                    write(new_socket, "Enter amount to withdraw: ", 26);
-                                    read(new_socket, buffer, BUFFER_SIZE);
-                                    amt = atof(buffer);
-
-                                    if (withdraw_money(customer_id, amt)) {
-                                        send(new_socket, "Withdrawal successful.\n", 23, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    } else {
-                                        send(new_socket, "Failed to withdraw money.\n", 26, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    }
-                                    break;
-                                case 4:
-                                    char to_email[50];
-                                    write(new_socket, "Enter recipient Email: ", 23);
-                                    read(new_socket, to_email, 50);
-                                    to_email[strcspn(to_email, "\n")] = 0; // Removing the newline character from input
-
-                                    write(new_socket, "Enter amount to transfer: ", 26);
-                                    read(new_socket, buffer, BUFFER_SIZE);
-                                    amount = atof(buffer);
-
-                                    if (transfer_funds(email, to_email, amount)) {
-                                        send(new_socket, "Transfer successful.\n", 21, 0);
-                                    } else {
-                                        send(new_socket, "Transfer failed.\n", 17, 0);
-                                    }
-
-                                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                    usleep(100);
-                                    send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    break;
-                                case 5:
-                                    double loan_amount;
-                                    write(new_socket, "Enter loan amount: ", 19);
-                                    read(new_socket, buffer, BUFFER_SIZE);
-                                    loan_amount = atof(buffer);
-
-                                    if (apply_for_loan(customer_id, loan_amount)) {
-                                        send(new_socket, "Loan application submitted successfully.\n", 41, 0);
-                                    } else {
-                                        send(new_socket, "Failed to submit loan application.\n", 34, 0);
-                                    }
-
-                                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                    usleep(100);
-                                    send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    break;
-                                case 6:
-                                    char new_password[50];
-                                    write(new_socket, "Enter new password: ", 20);
-                                    read(new_socket, new_password, 50);
-                                    new_password[strcspn(new_password, "\n")] = 0; // Removing the newline character from input
-
-                                    if (change_password(customer_id, new_password)) {
-                                        send(new_socket, "Password changed successfully.\n", 31, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    } else {
-                                        send(new_socket, "Failed to change password.\n", 27, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    }
-                                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                    usleep(100);
-                                    send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    break;
-                                case 7:
-                                    char feedback[BUFFER_SIZE];
-                                    write(new_socket, "Enter your feedback: ", 21);
-                                    read(new_socket, feedback, BUFFER_SIZE);
-                                    feedback[strcspn(feedback, "\n")] = 0; // Removing the newline character from input
-
-                                    if (add_feedback(customer_id, feedback)) {
-                                        send(new_socket, "Feedback added successfully.\n", 29, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    } else {
-                                        send(new_socket, "Failed to add feedback.\n", 24, 0);
-                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                        usleep(100);
-                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    }
-                                    break;
-                                case 8:
-                                    if (view_transaction_history(email, new_socket)) {
-                                        send(new_socket, "Transaction history displayed.\n", 31, 0);
-                                    } else {
-                                        send(new_socket, "Failed to display transaction history.\n", 39, 0);
-                                    }
-                                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                    usleep(100);
-                                    send(new_socket, customer_menu, strlen(customer_menu), 0);
-                                    break;
-
-                                case 9:
-                                    write(new_socket, "Logged out successfully.\n", 26);
-                                    close(new_socket);
-                                    free(socket_desc);
-                                    pthread_exit(NULL);
-                                    break;
-                                case 10:
-                                    write(new_socket, "Exiting...\n", 11);
-                                    close(new_socket);
-                                    free(socket_desc);
-                                    pthread_exit(NULL);
-                                    break;
-
-                                default:
-                                    write(new_socket, "Invalid option. Please select again\n", 37);
-                            }
-                        }
-                    } else {
                         write(new_socket, "Login failed. Invalid credentials.\n", 35);
-                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                        usleep(100); // Ensure the message is fully sent
-                        send(new_socket, menu, strlen(menu), 0); // Show main menu again
-                    }
-                    break;
+                    } else {
+                        if(is_customer_logged_in(customer_id)) {
+                            write(new_socket, "Login failed. Customer already logged in.\n", 42);
+                        }else {
+                            int result = verify_customer(customer_id, password);
+                            if (result == 1) {
+                                set_logged_in_status(customer_id);
+                                write(new_socket, "Login successful.\n", 18);
+                                const char *customer_menu = "Welcome Customer\n"
+                                                            "=======================================================\n"
+                                                            "Customer Options:\n"
+                                                            "1. View Account Balance\n"
+                                                            "2. Deposit Money\n"
+                                                            "3. Withdraw Money\n"
+                                                            "4. Transfer Funds\n"
+                                                            "5. Apply for a Loan\n"
+                                                            "6. Change Password\n"
+                                                            "7. Add Feedback\n"
+                                                            "8. View Transaction History\n"
+                                                            "9. Logout\n"
+                                                            "10. Exit\n";
+                                send(new_socket, customer_menu, strlen(customer_menu), 0);
+
+                                while ((read_size = read(new_socket, buffer, BUFFER_SIZE - 1)) > 0) {
+                                    buffer[read_size] = '\0'; // Null-terminate the buffer
+                                    int customer_option = atoi(buffer);
+
+                                    switch (customer_option) {
+                                        case 1:
+                                            double balance = view_account_balance(customer_id);
+                                        if(balance >= 0) {
+                                            char balance_msg[100];
+                                            sprintf(balance_msg, "Account Balance: %.2f\n", balance);
+                                            send(new_socket, balance_msg, strlen(balance_msg), 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        }else {
+                                            send(new_socket, "Failed to fetch account balance\n", 32, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        }
+                                        break;
+                                        case 2:
+                                            double amount;
+                                        write(new_socket, "Enter amount to deposit: ", 25);
+                                        read(new_socket, buffer, BUFFER_SIZE);
+                                        amount = atof(buffer);
+
+                                        if (deposit_money(customer_id, amount)) {
+                                            send(new_socket, "Deposit successful.\n", 20, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        } else {
+                                            send(new_socket, "Failed to deposit money.\n", 25, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        }
+                                        break;
+                                        case 3:
+                                            double amt;
+                                        write(new_socket, "Enter amount to withdraw: ", 26);
+                                        read(new_socket, buffer, BUFFER_SIZE);
+                                        amt = atof(buffer);
+
+                                        if (withdraw_money(customer_id, amt)) {
+                                            send(new_socket, "Withdrawal successful.\n", 23, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        } else {
+                                            send(new_socket, "Failed to withdraw money.\n", 26, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        }
+                                        break;
+                                        case 4:
+                                            char to_email[50];
+                                        write(new_socket, "Enter recipient Email: ", 23);
+                                        read(new_socket, to_email, 50);
+                                        to_email[strcspn(to_email, "\n")] = 0; // Removing the newline character from input
+
+                                        write(new_socket, "Enter amount to transfer: ", 26);
+                                        read(new_socket, buffer, BUFFER_SIZE);
+                                        amount = atof(buffer);
+
+                                        if (transfer_funds(email, to_email, amount)) {
+                                            send(new_socket, "Transfer successful.\n", 21, 0);
+                                        } else {
+                                            send(new_socket, "Transfer failed.\n", 17, 0);
+                                        }
+
+                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                        usleep(100);
+                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        break;
+                                        case 5:
+                                            double loan_amount;
+                                        write(new_socket, "Enter loan amount: ", 19);
+                                        read(new_socket, buffer, BUFFER_SIZE);
+                                        loan_amount = atof(buffer);
+
+                                        if (apply_for_loan(customer_id, loan_amount)) {
+                                            send(new_socket, "Loan application submitted successfully.\n", 41, 0);
+                                        } else {
+                                            send(new_socket, "Failed to submit loan application.\n", 34, 0);
+                                        }
+
+                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                        usleep(100);
+                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        break;
+                                        case 6:
+                                            char new_password[50];
+                                        write(new_socket, "Enter new password: ", 20);
+                                        read(new_socket, new_password, 50);
+                                        new_password[strcspn(new_password, "\n")] = 0; // Removing the newline character from input
+
+                                        if (change_password(customer_id, new_password)) {
+                                            send(new_socket, "Password changed successfully.\n", 31, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        } else {
+                                            send(new_socket, "Failed to change password.\n", 27, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        }
+                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                        usleep(100);
+                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        break;
+                                        case 7:
+                                            char feedback[BUFFER_SIZE];
+                                        write(new_socket, "Enter your feedback: ", 21);
+                                        read(new_socket, feedback, BUFFER_SIZE);
+                                        feedback[strcspn(feedback, "\n")] = 0; // Removing the newline character from input
+
+                                        if (add_feedback(customer_id, feedback)) {
+                                            send(new_socket, "Feedback added successfully.\n", 29, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        } else {
+                                            send(new_socket, "Failed to add feedback.\n", 24, 0);
+                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                            usleep(100);
+                                            send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        }
+                                        break;
+                                        case 8:
+                                            if (view_transaction_history(email, new_socket)) {
+                                                send(new_socket, "Transaction history displayed.\n", 31, 0);
+                                            } else {
+                                                send(new_socket, "Failed to display transaction history.\n", 39, 0);
+                                            }
+                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                        usleep(100);
+                                        send(new_socket, customer_menu, strlen(customer_menu), 0);
+                                        break;
+
+                                        case 9:
+                                            set_logged_in_status(0); // Reset the login status
+                                            write(new_socket, "Logged out successfully.\n", 26);
+                                            close(new_socket);
+                                            free(socket_desc);
+                                            pthread_exit(NULL);
+                                            break;
+                                        case 10:
+                                            set_logged_in_status(0);
+                                            write(new_socket, "Exiting...\n", 11);
+                                            close(new_socket);
+                                            free(socket_desc);
+                                            pthread_exit(NULL);
+                                        break;
+
+                                        default:
+                                            write(new_socket, "Invalid option. Please select again\n", 37);
+                                    }
+                                }
+                            } else {
+                                write(new_socket, "Login failed. Invalid credentials.\n", 35);
+                                bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                usleep(100); // Ensure the message is fully sent
+                                send(new_socket, menu, strlen(menu), 0); // Show main menu again
+                            }
+                            break;
+                        }
                 }
                 break;
             }
@@ -250,7 +261,9 @@ void *handle_client(void *socket_desc) {
                         if (result == 1) {
                             log_in_employee(email);
                             write(new_socket, "Login successful.\n", 18);
-                            const char *employee_menu = "Employee Options:\n"
+                            const char *employee_menu = "Welcome Employee\n"
+                                                        "=======================================================\n"
+                                                        "Employee Options:\n"
                                                         "1. Add New Customer\n"
                                                         "2. Modify Customer Details\n"
                                                         "3. Process Loan Applications\n"
@@ -489,7 +502,9 @@ void *handle_client(void *socket_desc) {
                 int result = verify_manager(email, password);
                 if (result == 1) {
                     write(new_socket, "Login successful.\n", 18);
-                    const char *manager_menu = "Manager Options:\n"
+                    const char *manager_menu = "Welcome Manager\n"
+                                               "=======================================================\n"
+                                               "Manager Options:\n"
                                                "1. Activate/Deactivate Customer Accounts\n"
                                                "2. Assign Loan Application Processes to Employees\n"
                                                "3. Review Customer Feedback\n"
@@ -672,7 +687,9 @@ void *handle_client(void *socket_desc) {
                 int result = verify_admin(email, password);
                 if (result == 1) {
                     write(new_socket, "Login successful.\n", 18);
-                    const char *admin_menu = "Admin Options:\n"
+                    const char *admin_menu = "Welcome Admin\n"
+                                             "=======================================================\n"
+                                             "Admin Options:\n"
                                              "1. Add Employee\n"
                                              "2. Modify Employee\n"
                                              "3. Manage User Roles\n"
@@ -811,6 +828,38 @@ void *handle_client(void *socket_desc) {
                             usleep(100); // Add a slight delay to ensure data is fully sent before the next action
                             send(new_socket, admin_menu, strlen(admin_menu), 0);
                         } else if (admin_option == 6) {
+                            // Set logged_in to 0
+                            const char *file_path = "/home/girish-pc/projecter/db/admins.txt";
+                            FILE *file = fopen(file_path, "r");
+                            if (file == NULL) {
+                                perror("Failed to open file");
+                                return;
+                            }
+
+                            char line[256];
+                            char temp_path[] = "/home/girish-pc/projecter/db/temp.txt";
+                            FILE *temp_file = fopen(temp_path, "w");
+                            if (temp_file == NULL) {
+                                perror("Failed to open temp file");
+                                fclose(file);
+                                return;
+                            }
+
+                            while (fgets(line, sizeof(line), file)) {
+                                char stored_email[50], stored_password[50];
+                                int logged_in;
+                                sscanf(line, "%49[^,],%49[^,],%d", stored_email, stored_password, &logged_in);
+                                if (strcmp(stored_email, email) == 0) {
+                                    logged_in = 0; // Set logged_in to 0
+                                }
+                                fprintf(temp_file, "%s,%s,%d\n", stored_email, stored_password, logged_in);
+                            }
+
+                            fclose(file);
+                            fclose(temp_file);
+                            remove(file_path);
+                            rename(temp_path, file_path);
+
                             write(new_socket, "Logged out successfully.\n", 26);
                             bzero(buffer, BUFFER_SIZE); // Clear the buffer
                             usleep(100); // Add a slight delay to ensure data is fully sent before the next action
