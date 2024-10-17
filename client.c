@@ -2,14 +2,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <arpa/inet.h>
 
 #define PORT 8088
 #define BUFFER_SIZE 10240
 
+int sock = 0;
+
+void signal_handler(int sig) {
+    printf("Received signal %d, closing client...\n", sig);
+    close(sock);
+    exit(0);
+}
+
 int main() {
     int sock;
     struct sockaddr_in server;
+    signal(SIGINT, signal_handler);
     char message[BUFFER_SIZE], server_reply[BUFFER_SIZE];
 
     sock = socket(AF_INET, SOCK_STREAM, 0);

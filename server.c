@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "db.h"
 #include "admin/admintasks.h"
 #include "/home/girish-pc/projecter/customer/customertask.h"
@@ -14,6 +15,15 @@
 
 #define PORT 8088
 #define BUFFER_SIZE 102400
+
+int server_fd;
+
+void signal_handler(int sig) {
+    printf("Received signal %d, shutting down server...\n", sig);
+    set_logged_in_status(0); // Reset the login status
+    close(server_fd);
+    exit(0);
+}
 
 void *handle_client(void *socket_desc) {
     int new_socket = *(int *)socket_desc;
@@ -49,6 +59,9 @@ void *handle_client(void *socket_desc) {
                     } else {
                         if(is_customer_logged_in(customer_id)) {
                             write(new_socket, "Login failed. Customer already logged in.\n", 42);
+                            bzero(buffer, BUFFER_SIZE);
+                            usleep(100);
+                            send(new_socket, menu, strlen(menu), 0);
                         }else {
                             int result = verify_customer(customer_id, password);
                             if (result == 1) {
@@ -901,6 +914,9 @@ int main() {
     int server_fd, new_socket, *new_sock;
     struct sockaddr_in server, client;
     socklen_t client_len = sizeof(client);
+
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
