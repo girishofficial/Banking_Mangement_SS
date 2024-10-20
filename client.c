@@ -4,8 +4,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <arpa/inet.h>
+#include <termios.h>
 
-#define PORT 8088
+#define PORT 8087
 #define BUFFER_SIZE 10240
 
 int sock = 0;
@@ -16,8 +17,17 @@ void signal_handler(int sig) {
     exit(0);
 }
 
+void logout() {
+    char *command = "./client";
+    int result = system(command);
+    if (result == -1) {
+        printf("Error Logging Out!!.\n");
+    }
+    exit(0);
+}
+
 int main() {
-    int sock;
+    system("clear");
     struct sockaddr_in server;
     signal(SIGINT, signal_handler);
     char message[BUFFER_SIZE], server_reply[BUFFER_SIZE];
@@ -53,11 +63,41 @@ int main() {
         message[strcspn(message, "\n")] = '\0';
 
         bzero(server_reply, BUFFER_SIZE);
+
+        // Send user input to the server
         if (write(sock, message, strlen(message)) < 0) {
             return 1;
         }
 
-        if (strncmp(message, "10", 2) == 0) {
+        // Read server reply after sending user input
+        if (read(sock, server_reply, BUFFER_SIZE) < 0) {
+            perror("Recv failed");
+            return 1;
+        }
+
+        // Check if the server is asking for the customer password
+        if (strcmp(server_reply, "Enter Customer Password: ") == 0) {
+            // Use getpass to mask password input
+            char *password = getpass("Enter Customer Password: ");
+            strcpy(message, password);  // Store the masked password in the message buffer
+
+            // Send the masked password to the server
+            if (write(sock, message, strlen(message)) < 0) {
+                return 1;
+            }
+
+            // Read server's response to the password
+            if (read(sock, server_reply, BUFFER_SIZE) < 0) {
+                perror("Recv failed");
+                return 1;
+            }
+        }
+
+        // Output server reply after processing user input
+        printf("%s\n", server_reply);
+
+        // Exit conditions
+        if (strncmp(message, "10", 2) == 0 || strcmp(message, "exit customer") == 0) {
             printf("Exiting...\n");
             close(sock);
             break;
@@ -66,16 +106,9 @@ int main() {
         if (strncmp(message, "9", 1) == 0) {
             printf("Exiting...\n");
             close(sock);
+            logout();
             break;
         }
-
-        bzero(server_reply, BUFFER_SIZE);
-        if (read(sock, server_reply, BUFFER_SIZE) < 0) {
-            perror("Recv failed");
-            break;
-        }
-
-        printf("Server reply: %s\n", server_reply);
     }
 
     close(sock);

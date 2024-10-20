@@ -179,6 +179,7 @@ int add_customer(int id, const char *name, const char *email, const char *phone,
     strncpy(customer.password, password, sizeof(customer.password) - 1);
     customer.balance = balance;
     customer.account_active = account_active;
+    customer.logged_in = 0;
 
     fwrite(&customer, sizeof(Customer), 1, file);
     fclose(file);

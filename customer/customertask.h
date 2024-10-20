@@ -12,5 +12,6 @@ int add_feedback(int customer_id, const char *feedback);
 int view_transaction_history(const char *email, int socket);
 int get_customer_id_from_email(const char *email);
 int show_all_loans(int new_socket);
+void logout(int customer_id);
 
 #endif // CUSTOMERTASK_H

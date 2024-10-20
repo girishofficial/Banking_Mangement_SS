@@ -42,16 +42,16 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "adminCreator::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-adminCreator-Debug-48e0a8d4cec59634c9a5.json",
-					"name" : "adminCreator",
+					"id" : "client::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-client-Debug-582f062d3d9a58b74480.json",
+					"name" : "client",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
-					"id" : "client::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-client-Debug-582f062d3d9a58b74480.json",
-					"name" : "client",
+					"id" : "makeadmin::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-makeadmin-Debug-510a252ca5d90933bcf6.json",
+					"name" : "makeadmin",
 					"projectIndex" : 0
 				},
 				{

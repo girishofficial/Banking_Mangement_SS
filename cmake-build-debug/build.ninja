@@ -133,41 +133,35 @@ build client: C_EXECUTABLE_LINKER__client_Debug CMakeFiles/client.dir/client.c.o
   TARGET_PDB = client.dbg
 
 # =============================================================================
-# Object build statements for EXECUTABLE target adminCreator
+# Object build statements for EXECUTABLE target makeadmin
 
 
 #############################################
-# Order-only phony target for adminCreator
+# Order-only phony target for makeadmin
 
-build cmake_object_order_depends_target_adminCreator: phony || .
+build cmake_object_order_depends_target_makeadmin: phony || .
 
-build CMakeFiles/adminCreator.dir/adminCreator.c.o: C_COMPILER__adminCreator_unscanned_Debug /home/girish-pc/projecter/adminCreator.c || cmake_object_order_depends_target_adminCreator
-  DEP_FILE = CMakeFiles/adminCreator.dir/adminCreator.c.o.d
+build CMakeFiles/makeadmin.dir/makeadmin.c.o: C_COMPILER__makeadmin_unscanned_Debug /home/girish-pc/projecter/makeadmin.c || cmake_object_order_depends_target_makeadmin
+  DEP_FILE = CMakeFiles/makeadmin.dir/makeadmin.c.o.d
   FLAGS = -g -std=gnu11 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/adminCreator.dir
-  OBJECT_FILE_DIR = CMakeFiles/adminCreator.dir
-
-build CMakeFiles/adminCreator.dir/admin/admintasks.c.o: C_COMPILER__adminCreator_unscanned_Debug /home/girish-pc/projecter/admin/admintasks.c || cmake_object_order_depends_target_adminCreator
-  DEP_FILE = CMakeFiles/adminCreator.dir/admin/admintasks.c.o.d
-  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/adminCreator.dir
-  OBJECT_FILE_DIR = CMakeFiles/adminCreator.dir/admin
+  OBJECT_DIR = CMakeFiles/makeadmin.dir
+  OBJECT_FILE_DIR = CMakeFiles/makeadmin.dir
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target adminCreator
+# Link build statements for EXECUTABLE target makeadmin
 
 
 #############################################
-# Link the executable adminCreator
+# Link the executable makeadmin
 
-build adminCreator: C_EXECUTABLE_LINKER__adminCreator_Debug CMakeFiles/adminCreator.dir/adminCreator.c.o CMakeFiles/adminCreator.dir/admin/admintasks.c.o
+build makeadmin: C_EXECUTABLE_LINKER__makeadmin_Debug CMakeFiles/makeadmin.dir/makeadmin.c.o
   FLAGS = -g
-  OBJECT_DIR = CMakeFiles/adminCreator.dir
+  OBJECT_DIR = CMakeFiles/makeadmin.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = adminCreator
-  TARGET_PDB = adminCreator.dbg
+  TARGET_FILE = makeadmin
+  TARGET_PDB = makeadmin.dbg
 
 
 #############################################
@@ -203,7 +197,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 #############################################
 # Folder: /home/girish-pc/projecter/cmake-build-debug
 
-build all: phony server client adminCreator
+build all: phony server client makeadmin
 
 # =============================================================================
 # Built-in targets

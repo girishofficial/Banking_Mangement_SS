@@ -56,16 +56,24 @@ int get_customer_id_from_email(const char *email) {
     return -1; // Customer not found
 }
 int verify_customer(int customer_id, const char *password) {
-    int fd = open("/home/girish-pc/projecter/db/customers.txt", O_RDONLY);
+    int fd = open("/home/girish-pc/projecter/db/customers.txt", O_RDWR);
     if (fd == -1) {
         perror("Failed to open file");
         return 0;
     }
 
     Customer customer;
-    while (read(fd, &customer, sizeof(Customer)) > 0) {
+    off_t pos;
+    while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
-            if (strcmp(customer.password, password) == 0) {
+            if (customer.logged_in == 0 && strcmp(customer.password, password) == 0) {
+                printf(customer.logged_in);
+                lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
+                if (write(fd, &customer, sizeof(Customer)) == -1) {
+                    perror("Failed to update login status");
+                    close(fd);
+                    return 0;
+                }
                 close(fd);
                 return 1; // Verification successful
             } else {
@@ -79,6 +87,22 @@ int verify_customer(int customer_id, const char *password) {
     printf("Customer ID %d not found.\n", customer_id);
     close(fd);
     return 0; // Customer not found
+}
+
+void logout(int customer_id) {
+    int fd = open("/home/girish-pc/projecter/db/customers.txt", O_RDONLY);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return;
+    }
+
+    Customer customer;
+    while (read(fd, &customer, sizeof(Customer)) > 0) {
+        if (customer.id == customer_id) {
+            customer.logged_in = 0;
+            break;
+        }
+    }
 }
 
 
@@ -115,6 +139,11 @@ int deposit_money(int customer_id, double amount) {
     off_t pos;
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
+            if (!customer.account_active) {
+                send(socket, "Account is not active.\n", 23, 0);
+                close(fd);
+                return 0;
+            }
             customer.balance += amount;
             lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
             if (write(fd, &customer, sizeof(Customer)) == -1) {
@@ -145,6 +174,11 @@ int withdraw_money(int customer_id, double amount) {
     off_t pos;
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
+            if(!customer.account_active){
+                printf("Account is not active for Customer ID %d.\n", customer_id);
+                close(fd);
+                return 0;
+            }
             if (customer.balance >= amount) {
                 customer.balance -= amount;
                 lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record

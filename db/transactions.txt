@@ -9,3 +9,4 @@ Customer ID 1: Transfer In 2000.00
 Customer ID 1: deposit 6000.00
 Customer ID 1: deposit 6000.00
 Customer ID 1: deposit 6000.00
+Customer ID 1: deposit 500.00

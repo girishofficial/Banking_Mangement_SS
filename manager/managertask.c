@@ -113,3 +113,35 @@ int assign_employee_to_loan(int loan_id, int employee_id) {
     close(fd);
     return 0; // Loan not found
 }
+
+int change_manager_password(int employee_id, const char *new_password) {
+    const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
+    printf(employee_id);
+    printf(new_password);
+    int fd = open(file_path, O_RDWR);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    Employee emp;
+    off_t pos;
+    while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &emp, sizeof(Employee)) > 0) {
+        if (emp.id == employee_id) {
+            strncpy(emp.password, new_password, sizeof(emp.password) - 1);
+            emp.password[sizeof(emp.password) - 1] = '\0'; // Ensure null-termination
+
+            lseek(fd, pos, SEEK_SET);
+            if (write(fd, &emp, sizeof(Employee)) == -1) {
+                perror("Failed to write to file");
+                close(fd);
+                return 0;
+            }
+            close(fd);
+            return 1; // Password change successful
+        }
+    }
+
+    close(fd);
+    return 0; // Employee not found
+}

@@ -36,6 +36,7 @@ typedef struct {
     char name[50];
     char email[50];
     char password[50];
+    int is_manager;
     int logged_in;
 } Manager;
 

@@ -20,5 +20,4 @@ add_executable(server server.c
 
 )
 add_executable(client client.c)
-add_executable(adminCreator adminCreator.c
-        admin/admintasks.c)
+add_executable(makeadmin makeadmin.c)
