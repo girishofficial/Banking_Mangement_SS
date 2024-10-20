@@ -55,6 +55,12 @@ int get_customer_id_from_email(const char *email) {
     close(fd);
     return -1; // Customer not found
 }
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+
 int verify_customer(int customer_id, const char *password) {
     int fd = open("/home/girish-pc/projecter/db/customers.txt", O_RDWR);
     if (fd == -1) {
@@ -65,9 +71,10 @@ int verify_customer(int customer_id, const char *password) {
     Customer customer;
     off_t pos;
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
+        printf("Read Customer ID: %d, Password: '%s', Logged In: %d\n", customer.id, customer.password, customer.logged_in);
         if (customer.id == customer_id) {
-            if (customer.logged_in == 0 && strcmp(customer.password, password) == 0) {
-                printf(customer.logged_in);
+            if (customer.logged_in != 1 && strcmp(customer.password, password) == 0) {
+                customer.logged_in = 1;
                 lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
                 if (write(fd, &customer, sizeof(Customer)) == -1) {
                     perror("Failed to update login status");
@@ -89,20 +96,61 @@ int verify_customer(int customer_id, const char *password) {
     return 0; // Customer not found
 }
 
-void logout(int customer_id) {
-    int fd = open("/home/girish-pc/projecter/db/customers.txt", O_RDONLY);
+int set_logged_in(int customer_id) {
+    const char *file_path = "/home/girish-pc/projecter/db/customers.txt";
+    int fd = open(file_path, O_RDWR);
     if (fd == -1) {
         perror("Failed to open file");
-        return;
+        return 0;
     }
 
     Customer customer;
-    while (read(fd, &customer, sizeof(Customer)) > 0) {
+    off_t pos;
+    while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
-            customer.logged_in = 0;
-            break;
+            customer.logged_in = 1;
+            lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
+            if (write(fd, &customer, sizeof(Customer)) == -1) {
+                perror("Failed to update login status");
+                close(fd);
+                return 0;
+            }
+            close(fd);
+            return 1; // Update successful
         }
     }
+
+    close(fd);
+    return 0; // Customer not found
+}
+
+int set_logged_out(int customer_id) {
+    const char *file_path = "/home/girish-pc/projecter/db/customers.txt";
+    FILE *file = fopen(file_path, "r+b");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    Customer customer;
+    while (fread(&customer, sizeof(Customer), 1, file) == 1) {
+        if (customer.id == customer_id) {
+            customer.logged_in = 0;
+            fseek(file, -sizeof(Customer), SEEK_CUR); // Move the file pointer back to the start of the customer record
+            if (fwrite(&customer, sizeof(Customer), 1, file) != 1) {
+                perror("Failed to update login status");
+                fclose(file);
+                return 0;
+            }
+
+
+            fclose(file);
+            return 1;
+        }
+    }
+
+    fclose(file);
+    return 0; // Customer not found
 }
 
 

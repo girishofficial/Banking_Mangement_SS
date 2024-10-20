@@ -75,28 +75,32 @@ int main() {
             return 1;
         }
 
-        // Check if the server is asking for the customer password
-        if (strcmp(server_reply, "Enter Customer Password: ") == 0) {
-            // Use getpass to mask password input
-            char *password = getpass("Enter Customer Password: ");
-            strcpy(message, password);  // Store the masked password in the message buffer
+        // Check for different password prompts and mask input
+        if (strcmp(server_reply, "Enter Customer Password: ") == 0 ||
+            strcmp(server_reply, "Enter Employee Password: ") == 0 ||
+            strcmp(server_reply, "Enter Manager Password: ") == 0 ||
+            strcmp(server_reply, "Enter admin password: ") == 0) {
+            char *password = getpass(server_reply);
+            strcpy(message, password);
 
-            // Send the masked password to the server
             if (write(sock, message, strlen(message)) < 0) {
                 return 1;
             }
 
-            // Read server's response to the password
             if (read(sock, server_reply, BUFFER_SIZE) < 0) {
                 perror("Recv failed");
                 return 1;
             }
+
+
+            printf("%s\n", server_reply);
         }
 
-        // Output server reply after processing user input
+
+
         printf("%s\n", server_reply);
 
-        // Exit conditions
+
         if (strncmp(message, "10", 2) == 0 || strcmp(message, "exit customer") == 0) {
             printf("Exiting...\n");
             close(sock);

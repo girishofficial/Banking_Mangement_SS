@@ -53,17 +53,31 @@ int get_employee_id_from_email(const char *email) {
 
 int verify_employee(int employee_id, const char *password) {
     const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
-    int fd = open(file_path, O_RDONLY);
+    int fd = open(file_path, O_RDWR); // Change to O_RDWR to allow writing
     if (fd == -1) {
         perror("Failed to open file");
         return 0;
     }
 
     Employee emp;
-    while (read(fd, &emp, sizeof(Employee)) > 0) {
-        if (emp.id == employee_id && strcmp(emp.password, password) == 0 && emp.is_manager == 0){
-            close(fd);
-            return 1; // Verification successful
+    off_t pos;
+    while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &emp, sizeof(Employee)) > 0) {
+        if (emp.id == employee_id) {
+            if (emp.logged_in != 1 && strcmp(emp.password, password) == 0 && emp.is_manager == 0) {
+                emp.logged_in = 1;
+                lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the employee record
+                if (write(fd, &emp, sizeof(Employee)) == -1) {
+                    perror("Failed to update login status");
+                    close(fd);
+                    return 0;
+                }
+                close(fd);
+                return 1; // Verification successful
+            } else {
+                printf("Something not matched");
+                close(fd);
+                return 0;
+            }
         }
     }
 
@@ -231,16 +245,32 @@ int is_employee_logged_in(const char *email) {
     return 0; // Employee is not logged in
 }
 
-int log_in_employee(const char *email) {
-    int fd = open(LOGGED_IN_FILE, O_WRONLY | O_APPEND | O_CREAT, 0644);
+int set_employee_logged_in(int employee_id) {
+    const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
+    int fd = open(file_path, O_RDWR);
     if (fd == -1) {
-        perror("Failed to open logged in file");
+        perror("Failed to open file");
         return 0;
     }
 
-    dprintf(fd, "%s\n", email);
+    Employee employee;
+    off_t pos;
+    while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &employee, sizeof(Employee)) > 0) {
+        if (employee.id == employee_id) {
+            employee.logged_in = 1;
+            lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the employee record
+            if (write(fd, &employee, sizeof(Employee)) == -1) {
+                perror("Failed to update login status");
+                close(fd);
+                return 0;
+            }
+            close(fd);
+            return 1; // Update successful
+        }
+    }
+
     close(fd);
-    return 1;
+    return 0; // Employee not found
 }
 
 int log_out_employee(const char *email) {
@@ -335,5 +365,33 @@ int show_all_loans(int new_socket) {
 
     close(fd);
     return 1;
+}
+
+int set_employee_logged_out(int employee_id) {
+    const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
+    FILE *file = fopen(file_path, "r+b");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    Employee employee;
+    while (fread(&employee, sizeof(Employee), 1, file) == 1) {
+        if (employee.id == employee_id) {
+            employee.logged_in = 0;
+            fseek(file, -sizeof(Employee), SEEK_CUR); // Move the file pointer back to the start of the employee record
+            if (fwrite(&employee, sizeof(Employee), 1, file) != 1) {
+                perror("Failed to update login status");
+                fclose(file);
+                return 0;
+            }
+
+            fclose(file);
+            return 1;
+        }
+    }
+
+    fclose(file);
+    return 0; // Employee not found
 }
 

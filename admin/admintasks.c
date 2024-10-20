@@ -35,6 +35,35 @@ int verify_admin(const char *email, const char *password) {
     return 0; // Record not found
 }
 
+int logout_admin(const char *email) {
+    const char* file_path = "/home/girish-pc/projecter/db/admins.txt";
+    char stored_email[50], stored_password[50];
+    int logged_in;
+    FILE *file = fopen(file_path, "r+"); // Open the file in read-write mode
+    if (file == NULL) {
+        perror("Failed to open file db/admins.txt");
+        return -1;
+    }
+
+    long pos;
+    while ((pos = ftell(file)) != -1 && fscanf(file, "%49[^,],%49[^,],%d\n", stored_email, stored_password, &logged_in) != EOF) {
+        if (strcmp(stored_email, email) == 0) {
+            if (logged_in == 0) {
+                fclose(file);
+                return 0; // Already logged out
+            }
+            logged_in = 0; // Set logged_in to 0
+            fseek(file, pos, SEEK_SET); // Move the file pointer back to the start of the current record
+            fprintf(file, "%s,%s,%d\n", stored_email, stored_password, logged_in); // Update the record
+            fclose(file);
+            return 1; // Record found and updated
+        }
+    }
+
+    fclose(file);
+    return 0; // Record not found
+}
+
 int lookup(const char *id) {
     const char* file_path = "/home/girish-pc/projecter/db/employees.txt";
     int fd = open(file_path, O_RDONLY);

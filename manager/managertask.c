@@ -14,24 +14,39 @@
 #define LOGGED_IN_FILE "/home/girish-pc/projecter/db/logged_in.txt"
 
 
-int verify_manager(const char *email, const char *password) {
+
+int verify_manager(int manager_id, const char *password) {
     const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
-    int fd = open(file_path, O_RDONLY);
+    int fd = open(file_path, O_RDWR); // Change to O_RDWR to allow writing
     if (fd == -1) {
         perror("Failed to open file");
         return 0;
     }
 
     Employee emp;
-    while (read(fd, &emp, sizeof(Employee)) > 0) {
-        if (strcmp(emp.email, email) == 0 && strcmp(emp.password, password) == 0 && emp.is_manager == 1) {
-            close(fd);
-            return 1; // Credentials are valid
+    off_t pos;
+    while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &emp, sizeof(Employee)) > 0) {
+        if (emp.id == manager_id) {
+            if (emp.logged_in != 1 &&strcmp(emp.password, password) == 0 && emp.is_manager == 1) {
+                emp.logged_in = 1;
+                lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the employee record
+                if (write(fd, &emp, sizeof(Employee)) == -1) {
+                    perror("Failed to update login status");
+                    close(fd);
+                    return 0;
+                }
+                close(fd);
+                return 1; // Credentials are valid
+            } else {
+                printf("Something did not match\n");
+                close(fd);
+                return 0;
+            }
         }
     }
 
     close(fd);
-    return 0; // Invalid credentials
+    return 0; // Manager not found
 }
 
 int update_customer_status(int customer_id, int new_status) {

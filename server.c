@@ -89,7 +89,6 @@ void *handle_client(void *socket_desc) {
                         // }else {
                             int result = verify_customer(customer_id, password);
                             if (result == 1) {
-
                                 write(new_socket, "Login successful.\n", 18);
 
                                 const char *customer_menu = "Welcome Customer\n"
@@ -251,29 +250,16 @@ void *handle_client(void *socket_desc) {
                                         break;
 
                                         case 9:
-                                            logout(customer_id);// Reset the login status
+                                            set_logged_out(customer_id);
                                             write(new_socket, "Logged out successfully.\n", 26);
-                                            close(new_socket);
-                                            free(socket_desc);
-                                            pthread_exit(NULL);
-                                            exit(0);
+                                            bzero(buffer, BUFFER_SIZE);
+                                            usleep(100);
+                                            send(new_socket, menu, strlen(menu), 0);
                                             break;
                                         case 10:
-                                            set_logged_in_status(0);
-                                            write(new_socket, "Type **exit customer** for exiting...\n", 39);
+                                            set_logged_out(customer_id);
+                                            send(buffer,"exit customer", 11, 0);
 
-                                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                            read(new_socket, buffer, BUFFER_SIZE); // Read user input
-                                            buffer[strcspn(buffer, "\n")] = 0; // Remove the newline character from input
-
-                                            if (strcmp(buffer, "exit customer") == 0) {
-                                                write(new_socket, "Exiting...\n", 11);
-                                                close(new_socket);
-                                                free(socket_desc);
-                                                pthread_exit(NULL);
-                                            } else {
-                                                write(new_socket, "Invalid input. Please type **exit customer** to exit.\n", 54);
-                                            }
                                         break;
 
                                         default:
@@ -316,7 +302,6 @@ void *handle_client(void *socket_desc) {
                     } else {
                         int result = verify_employee(employee_id, password);
                         if (result == 1) {
-                            log_in_employee(email);
                             write(new_socket, "Login successful.\n", 18);
                             const char *employee_menu = "Welcome Employee\n"
                                                         "=======================================================\n"
@@ -357,7 +342,7 @@ void *handle_client(void *socket_desc) {
                                     read(new_socket, phone, 20);
                                     phone[strcspn(phone, "\n")] = 0;
 
-                                    write(new_socket, "Enter Customer Password: ", 25);
+                                    write(new_socket, "Customer Password: ", 25);
                                     read(new_socket, password, 50);
                                     password[strcspn(password, "\n")] = 0;
 
@@ -521,12 +506,14 @@ void *handle_client(void *socket_desc) {
                                     send(new_socket, employee_menu, strlen(employee_menu), 0);
                                     break;
                                     case 6:
+                                        set_employee_logged_out(employee_id);
                                         write(new_socket, "Logged out successfully.\n", 26);
                                         bzero(buffer, BUFFER_SIZE);
                                         usleep(100);
                                         send(new_socket, menu, strlen(menu), 0);
                                         break;
                                     case 7:
+                                        set_employee_logged_out(employee_id);
                                         write(new_socket, "exit\n", 11);
                                         send(new_socket,"exit", 11, 0);
                                         break;
@@ -555,8 +542,8 @@ void *handle_client(void *socket_desc) {
                 write(new_socket, "Enter Manager Password: ", 24);
                 read(new_socket, password, 50);
                 password[strcspn(password, "\n")] = 0; // Removing the newline character from input
-
-                int result = verify_manager(email, password);
+                int manager_id = get_employee_id_from_email(email);
+                int result = verify_manager(manager_id, password);
                 if (result == 1) {
                     write(new_socket, "Login successful.\n", 18);
                     const char *manager_menu = "Welcome Manager\n"
@@ -699,6 +686,7 @@ void *handle_client(void *socket_desc) {
                             send(new_socket, manager_menu, strlen(manager_menu), 0);
                             break;
                         } else if (manager_option == 5) {
+                            set_employee_logged_out(manager_id);
                             write(new_socket, "Logged out successfully.\n", 26);
                             bzero(buffer, BUFFER_SIZE); // Clear the buffer
                             usleep(100); // Add a slight delay to ensure data is fully sent before the next action
@@ -728,7 +716,7 @@ void *handle_client(void *socket_desc) {
                 email[strcspn(email, "\n")] = 0; // Removing the newline character from input
                 printf("Received email: %s\n", email); // Debugging line
 
-                write(new_socket, "Enter Admin Password: ", 21);
+                write(new_socket, "Enter admin password: ", 21);
                 read(new_socket, password, 50);
                 password[strcspn(password, "\n")] = 0; // Removing the newline character from input
                 printf("Received password: %s\n", password); // Debugging line
@@ -768,7 +756,7 @@ void *handle_client(void *socket_desc) {
                             read(new_socket, email, 50);
                             email[strcspn(email, "\n")] = 0;
 
-                            write(new_socket, "Enter Employee Password: ", 25);
+                            write(new_socket, "Employee Password: ", 25);
                             read(new_socket, password, 50);
                             password[strcspn(password, "\n")] = 0;
 
@@ -924,41 +912,10 @@ void *handle_client(void *socket_desc) {
                             usleep(100); // Add a slight delay to ensure data is fully sent before the next action
                             send(new_socket, admin_menu, strlen(admin_menu), 0);
                         } else if (admin_option == 6) {
-                            // Set logged_in to 0
-                            const char *file_path = "/home/girish-pc/projecter/db/admins.txt";
-                            FILE *file = fopen(file_path, "r");
-                            if (file == NULL) {
-                                perror("Failed to open file");
-                                return;
-                            }
-
-                            char line[256];
-                            char temp_path[] = "/home/girish-pc/projecter/db/temp.txt";
-                            FILE *temp_file = fopen(temp_path, "w");
-                            if (temp_file == NULL) {
-                                perror("Failed to open temp file");
-                                fclose(file);
-                                return;
-                            }
-
-                            while (fgets(line, sizeof(line), file)) {
-                                char stored_email[50], stored_password[50];
-                                int logged_in;
-                                sscanf(line, "%49[^,],%49[^,],%d", stored_email, stored_password, &logged_in);
-                                if (strcmp(stored_email, email) == 0) {
-                                    logged_in = 0; // Set logged_in to 0
-                                }
-                                fprintf(temp_file, "%s,%s,%d\n", stored_email, stored_password, logged_in);
-                            }
-
-                            fclose(file);
-                            fclose(temp_file);
-                            remove(file_path);
-                            rename(temp_path, file_path);
-
-                            write(new_socket, "Logged out successfully.\n", 26);
-                            bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                            usleep(100); // Add a slight delay to ensure data is fully sent before the next action
+                            logout_admin(email);
+                            write(new_socket,"Logout Successfull", 19);
+                            bzero(buffer, BUFFER_SIZE);
+                            usleep(100);
                             send(new_socket, menu, strlen(menu), 0);
                             break;
                         } else {
