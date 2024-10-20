@@ -6,6 +6,8 @@
 #include "../db.h"
 #include "admintasks.h"
 
+#define BUFFER_SIZE 102400
+
 int verify_admin(const char *email, const char *password) {
     const char* file_path = "/home/girish-pc/projecter/db/admins.txt";
     char stored_email[50], stored_password[50];
@@ -102,28 +104,41 @@ int add_employee(int id, const char *name, const char *email, const char *passwo
     return 1;
 }
 
-int modify_employee(int id, const char *name, const char *email, const char *password, int is_manager) {
+int modify_employee(int employee_id, const char *name, const char *email, const char *password, int is_manager) {
     const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
-    int fd = open(file_path, O_WRONLY);
-    if (fd == -1) {
+    FILE *file = fopen(file_path, "r+b");
+    if (file == NULL) {
         perror("Failed to open file");
         return 0;
     }
+
     Employee emp;
-    while (read(fd, &emp, sizeof(emp)) > 0) {
-        if (emp.id == id) {
-            lseek(fd, -sizeof(emp), SEEK_CUR);
+    while (fread(&emp, sizeof(Employee), 1, file) == 1) {
+        if (emp.id == employee_id) {
+            // Update employee details
             strncpy(emp.name, name, sizeof(emp.name) - 1);
+            emp.name[sizeof(emp.name) - 1] = '\0';
             strncpy(emp.email, email, sizeof(emp.email) - 1);
+            emp.email[sizeof(emp.email) - 1] = '\0';
             strncpy(emp.password, password, sizeof(emp.password) - 1);
+            emp.password[sizeof(emp.password) - 1] = '\0';
             emp.is_manager = is_manager;
-            write(fd, &emp, sizeof(emp));
-            close(fd);
-            return 1;
+
+            // Move the file pointer back to the start of the employee record
+            fseek(file, -sizeof(Employee), SEEK_CUR);
+            if (fwrite(&emp, sizeof(Employee), 1, file) != 1) {
+                perror("Failed to update employee details");
+                fclose(file);
+                return 0;
+            }
+
+            fclose(file);
+            return 1; // Success
         }
     }
-    close(fd);
-    return 0;
+
+    fclose(file);
+    return 0; // Employee not found
 }
 
 int manage_user_roles(int id, int new_role) {
@@ -213,5 +228,45 @@ int add_customer(int id, const char *name, const char *email, const char *phone,
     fwrite(&customer, sizeof(Customer), 1, file);
     fclose(file);
     return 1;
+}
+
+void list_all_employees(int new_socket) {
+    const char* file_path = "/home/girish-pc/projecter/db/employees.txt";
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        send(new_socket, "Failed to open employee file.\n", 30, 0);
+        return;
+    }
+
+    char buffer[BUFFER_SIZE];
+    Employee emp;
+    int index = 1;
+    while (fread(&emp, sizeof(Employee), 1, file) > 0) {
+        snprintf(buffer, BUFFER_SIZE, "Employee %d:\nID: %d\nName: %s\nEmail: %s\nIs Manager: %d\n\n",
+                 index++, emp.id, emp.name, emp.email, emp.is_manager);
+        send(new_socket, buffer, strlen(buffer), 0);
+    }
+    fclose(file);
+}
+
+
+int get_employee_details(int employee_id, Employee *emp) {
+    const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    while (fread(emp, sizeof(Employee), 1, file) > 0) {
+        if (emp->id == employee_id) {
+            fclose(file);
+            return 1; // Employee found
+        }
+    }
+
+    fclose(file);
+    return 0; // Employee not found
 }
 

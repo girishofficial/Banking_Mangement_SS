@@ -5,7 +5,7 @@ int verify_customer(int customer_id, const char *password);
 double view_account_balance(int customer_id);
 int deposit_money(int customer_id, double amount);
 int withdraw_money(int customer_id, double amount);
-int transfer_funds(const char *from_email, const char *to_email, double amount);
+int transfer_funds(int sender_id, int reciver_id, double amount);
 int apply_for_loan(int customer_id, double amount);
 int change_password(int customer_id, const char *new_password);
 int add_feedback(int customer_id, const char *feedback);

@@ -13,7 +13,13 @@
 #define BUFFER_SIZE 10240
 #define LOGGED_IN_FILE "/home/girish-pc/projecter/db/logged_in.txt"
 
-
+void log_message(const char *message) {
+    FILE *log_file = fopen("/home/girish-pc/projecter/server.log", "a");
+    if (log_file != NULL) {
+        fprintf(log_file, "%s\n", message);
+        fclose(log_file);
+    }
+}
 
 int verify_manager(int manager_id, const char *password) {
     const char *file_path = "/home/girish-pc/projecter/db/employees.txt";
@@ -107,6 +113,7 @@ int assign_employee_to_loan(int loan_id, int employee_id) {
     int fd = open(file_path, O_RDWR);
     if (fd == -1) {
         perror("Failed to open file");
+        log_message("Failed to open loans file");
         return 0;
     }
 
@@ -117,14 +124,17 @@ int assign_employee_to_loan(int loan_id, int employee_id) {
             loan.assigned_employee_id = employee_id;
             if (write(fd, &loan, sizeof(LoanApplication)) == -1) {
                 perror("Failed to write to file");
+                log_message("Failed to write to loans file");
                 close(fd);
                 return 0;
             }
+            log_message("Loan assignment successful");
             close(fd);
             return 1; // Assignment successful
         }
     }
 
+    log_message("Loan not found");
     close(fd);
     return 0; // Loan not found
 }
@@ -160,3 +170,4 @@ int change_manager_password(int employee_id, const char *new_password) {
     close(fd);
     return 0; // Employee not found
 }
+

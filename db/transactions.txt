@@ -10,3 +10,11 @@ Customer ID 1: deposit 6000.00
 Customer ID 1: deposit 6000.00
 Customer ID 1: deposit 6000.00
 Customer ID 1: deposit 500.00
+Customer ID 1: deposit 500.00
+Customer ID 1: deposit 2000.00
+Customer ID 1: withdrawal 4000.00
+Customer ID 1: withdrawal 3.00
+Customer ID 1: withdrawal 500.00
+Customer ID 2: deposit 500.00
+Customer ID 1: Transfer Out 500.00
+Customer ID 2: Transfer In 500.00

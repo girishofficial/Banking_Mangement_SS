@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <time.h>
+#include <sys/file.h>
 
 #include "../db.h"
 
@@ -185,13 +186,30 @@ int deposit_money(int customer_id, double amount) {
 
     Customer customer;
     off_t pos;
+    struct flock lock;
+
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
             if (!customer.account_active) {
-                send(socket, "Account is not active.\n", 23, 0);
+                printf("Account is not active for Customer ID %d.\n", customer_id);
                 close(fd);
                 return 0;
             }
+
+            // Set up the lock
+            lock.l_type = F_WRLCK;
+            lock.l_whence = SEEK_SET;
+            lock.l_start = pos;
+            lock.l_len = sizeof(Customer);
+            lock.l_pid = getpid();
+
+            // Apply the lock
+            if (fcntl(fd, F_SETLK, &lock) == -1) {
+                perror("Failed to lock record");
+                close(fd);
+                return 0;
+            }
+
             customer.balance += amount;
             lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
             if (write(fd, &customer, sizeof(Customer)) == -1) {
@@ -199,6 +217,15 @@ int deposit_money(int customer_id, double amount) {
                 close(fd);
                 return 0;
             }
+
+            // Unlock the record
+            lock.l_type = F_UNLCK;
+            if (fcntl(fd, F_SETLK, &lock) == -1) {
+                perror("Failed to unlock record");
+                close(fd);
+                return 0;
+            }
+
             printf("Deposited %.2f to Customer ID %d. New Balance: %.2f\n", amount, customer_id, customer.balance);
             close(fd);
             add_transaction(customer_id, amount, "deposit"); // Add transaction
@@ -220,30 +247,56 @@ int withdraw_money(int customer_id, double amount) {
 
     Customer customer;
     off_t pos;
+    struct flock lock;
+
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
-            if(!customer.account_active){
+            if (!customer.account_active) {
                 printf("Account is not active for Customer ID %d.\n", customer_id);
                 close(fd);
                 return 0;
             }
-            if (customer.balance >= amount) {
-                customer.balance -= amount;
-                lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
-                if (write(fd, &customer, sizeof(Customer)) == -1) {
-                    perror("Failed to write updated balance");
-                    close(fd);
-                    return 0;
-                }
-                printf("Withdrew %.2f from Customer ID %d. New Balance: %.2f\n", amount, customer_id, customer.balance);
-                close(fd);
-                add_transaction(customer_id, amount, "withdrawal"); // Add transaction
-                return 1;
-            } else {
+
+            if (customer.balance < amount) {
                 printf("Insufficient balance for Customer ID %d.\n", customer_id);
                 close(fd);
                 return 0;
             }
+
+            // Set up the lock
+            lock.l_type = F_WRLCK;
+            lock.l_whence = SEEK_SET;
+            lock.l_start = pos;
+            lock.l_len = sizeof(Customer);
+            lock.l_pid = getpid();
+
+            // Apply the lock
+            if (fcntl(fd, F_SETLK, &lock) == -1) {
+                perror("Failed to lock record");
+                close(fd);
+                return 0;
+            }
+
+            customer.balance -= amount;
+            lseek(fd, pos, SEEK_SET); // Move the file pointer back to the start of the customer record
+            if (write(fd, &customer, sizeof(Customer)) == -1) {
+                perror("Failed to write updated balance");
+                close(fd);
+                return 0;
+            }
+
+            // Unlock the record
+            lock.l_type = F_UNLCK;
+            if (fcntl(fd, F_SETLK, &lock) == -1) {
+                perror("Failed to unlock record");
+                close(fd);
+                return 0;
+            }
+
+            printf("Withdrew %.2f from Customer ID %d. New Balance: %.2f\n", amount, customer_id, customer.balance);
+            close(fd);
+            add_transaction(customer_id, amount, "withdrawal"); // Add transaction
+            return 1;
         }
     }
 
@@ -396,21 +449,21 @@ int customer_exists(int customer_id) {
     return 0; // Customer not found
 }
 
-int transfer_funds(const char *from_email, const char *to_email, double amount) {
+int transfer_funds(int sender_id, int reciver_id, double amount) {
     if (amount <= 0) {
         printf("Transfer failed: Invalid amount\n");
         return 0; // Invalid amount
     }
 
-    int from_customer_id = get_customer_id_from_email(from_email);
+    int from_customer_id = sender_id;
     if (from_customer_id == -1) {
-        printf("Transfer failed: Sender email %s not found\n", from_email);
+        printf("Transfer failed: Sender email %d not found\n",sender_id );
         return 0; // Sender not found
     }
 
-    int to_customer_id = get_customer_id_from_email(to_email);
+    int to_customer_id = reciver_id;
     if (to_customer_id == -1) {
-        printf("Transfer failed: Recipient email %s not found\n", to_email);
+        printf("Transfer failed: Recipient email %d not found\n", reciver_id);
         return 0; // Recipient not found
     }
 

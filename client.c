@@ -101,7 +101,7 @@ int main() {
         printf("%s\n", server_reply);
 
 
-        if (strncmp(message, "10", 2) == 0 || strcmp(message, "exit customer") == 0) {
+        if (strncmp(message, "10", 2) == 0 || strcmp(message, "EXIT") == 0) {
             printf("Exiting...\n");
             close(sock);
             break;
