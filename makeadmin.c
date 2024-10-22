@@ -2,31 +2,55 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 #include "db.h"
 
-void add_admin() {
-    Admin admin;
-    const int fd = open("db/admins.txt", O_WRONLY | O_CREAT | O_APPEND, 0666);
-
+int add_admin() {
+    const char *file_path = "/home/girish-pc/projecter/db/admins.txt";
+    int fd = open(file_path, O_RDWR | O_APPEND);
     if (fd == -1) {
-        perror("Failed to open file db/admins.txt");
-        return;
+        perror("Failed to open file");
+        return 0;
     }
 
+    struct flock lock;
+    memset(&lock, 0, sizeof(lock));
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_END;
+    lock.l_start = 0;
+    lock.l_len = sizeof(Admin);
+
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        perror("Failed to lock record");
+        close(fd);
+        return 0;
+    }
+
+    Admin new_admin;
+
+    printf("Enter ID: ");
+    scanf("%d", &new_admin.id);
+
     printf("Enter Email: ");
-    scanf(" %49[^\n]", admin.email);  // Read a line of text with spaces
+    scanf(" %49[^\n]", new_admin.email);
 
     printf("Enter Password: ");
-    scanf(" %49[^\n]", admin.password);  // Read a line of text with spaces
+    scanf(" %49[^\n]", new_admin.password);
 
-    // Initialize logged_in to 0
-    admin.logged_in = 0;
+    new_admin.logged_in = 0;
 
-    // Write the admin email, password, and logged_in status to the file
-    dprintf(fd, "%s,%s,%d\n", admin.email, admin.password, admin.logged_in);
-    printf("Admin added successfully!\n");
+    if (write(fd, &new_admin, sizeof(Admin)) == -1) {
+        perror("Failed to write to file");
+        lock.l_type = F_UNLCK;
+        fcntl(fd, F_SETLK, &lock);
+        close(fd);
+        return 0;
+    }
 
+    lock.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, &lock);
     close(fd);
+    return 1;
 }
 
 int main() {

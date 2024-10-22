@@ -22,13 +22,13 @@ int set_all_customers_logged_out() {
     Customer customer;
     while (fread(&customer, sizeof(Customer), 1, file) == 1) {
         // Print customer details before change
-        printf("Customer Details Before Change:\n");
-        printf("ID: %d\n", customer.id);
-        printf("Name: %s\n", customer.name);
-        printf("Email: %s\n", customer.email);
-        printf("Phone: %s\n", customer.phone);
-        printf("Password: %s\n", customer.password);
-        printf("Logged In: %d\n", customer.logged_in);
+//        printf("Customer Details Before Change:\n");
+//        printf("ID: %d\n", customer.id);
+//        printf("Name: %s\n", customer.name);
+//        printf("Email: %s\n", customer.email);
+//        printf("Phone: %s\n", customer.phone);
+//        printf("Password: %s\n", customer.password);
+//        printf("Logged In: %d\n", customer.logged_in);
 
         // Update logged_in status
         customer.logged_in = 0;
@@ -41,13 +41,13 @@ int set_all_customers_logged_out() {
         }
 
         // Print customer details after change
-        printf("Customer Details After Change:\n");
-        printf("ID: %d\n", customer.id);
-        printf("Name: %s\n", customer.name);
-        printf("Email: %s\n", customer.email);
-        printf("Phone: %s\n", customer.phone);
-        printf("Password: %s\n", customer.password);
-        printf("Logged In: %d\n", customer.logged_in);
+//        printf("Customer Details After Change:\n");
+//        printf("ID: %d\n", customer.id);
+//        printf("Name: %s\n", customer.name);
+//        printf("Email: %s\n", customer.email);
+//        printf("Phone: %s\n", customer.phone);
+//        printf("Password: %s\n", customer.password);
+//        printf("Logged In: %d\n", customer.logged_in);
     }
 
     // Unlock the file

@@ -185,10 +185,15 @@ int change_admin_password(const char *email, const char *new_password) {
     int found = 0;
 
     while (fgets(line, sizeof(line), file)) {
-        char *token = strtok(line, ",");
-        if (token && strcmp(token, email) == 0) {
-            found = 1;
-            fprintf(temp_file, "%s,%s\n", email, new_password);
+        char stored_email[50], stored_password[50];
+        int logged_in;
+        if (sscanf(line, "%49[^,],%49[^,],%d", stored_email, stored_password, &logged_in) == 3) {
+            if (strcmp(stored_email, email) == 0) {
+                found = 1;
+                fprintf(temp_file, "%s,%s,%d\n", stored_email, new_password, logged_in);
+            } else {
+                fprintf(temp_file, "%s", line);
+            }
         } else {
             fprintf(temp_file, "%s", line);
         }

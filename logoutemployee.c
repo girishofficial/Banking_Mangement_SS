@@ -22,13 +22,13 @@ int set_all_employees_logged_out() {
     Employee employee;
     while (fread(&employee, sizeof(Employee), 1, file) == 1) {
         // Print employee details before change
-        printf("Employee Details Before Change:\n");
-        printf("ID: %d\n", employee.id);
-        printf("Name: %s\n", employee.name);
-        printf("Email: %s\n", employee.email);
-        printf("Password: %s\n", employee.password);
-        printf("Is Manager: %d\n", employee.is_manager);
-        printf("Logged In: %d\n", employee.logged_in);
+//        printf("Employee Details Before Change:\n");
+//        printf("ID: %d\n", employee.id);
+//        printf("Name: %s\n", employee.name);
+//        printf("Email: %s\n", employee.email);
+//        printf("Password: %s\n", employee.password);
+//        printf("Is Manager: %d\n", employee.is_manager);
+//        printf("Logged In: %d\n", employee.logged_in);
 
         // Update logged_in status
         employee.logged_in = 0;
@@ -41,13 +41,13 @@ int set_all_employees_logged_out() {
         }
 
         // Print employee details after change
-        printf("Employee Details After Change:\n");
-        printf("ID: %d\n", employee.id);
-        printf("Name: %s\n", employee.name);
-        printf("Email: %s\n", employee.email);
-        printf("Password: %s\n", employee.password);
-        printf("Is Manager: %d\n", employee.is_manager);
-        printf("Logged In: %d\n", employee.logged_in);
+//        printf("Employee Details After Change:\n");
+//        printf("ID: %d\n", employee.id);
+//        printf("Name: %s\n", employee.name);
+//        printf("Email: %s\n", employee.email);
+//        printf("Password: %s\n", employee.password);
+//        printf("Is Manager: %d\n", employee.is_manager);
+//        printf("Logged In: %d\n", employee.logged_in);
     }
 
     // Unlock the file

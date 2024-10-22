@@ -20,27 +20,14 @@
 #define RETRY_LIMIT 5
 #define RETRY_DELAY 2
 
-void disable_echo() {
-    struct termios tty;
-    tcgetattr(STDIN_FILENO, &tty);
-    tty.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &tty);
-}
-
-void enable_echo() {
-    struct termios tty;
-    tcgetattr(STDIN_FILENO, &tty);
-    tty.c_lflag |= ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &tty);
-}
-
 pthread_mutex_t customer_edit_mutex;
 
 int server_fd;
 
 void signal_handler(int sig) {
     printf("Received signal %d, shutting down server...\n", sig);
-    set_logged_in_status(0); // Reset the login status
+    system("/home/girish-pc/projecter/logemp");
+    system("/home/girish-pc/projecter/cuslog");
     close(server_fd);
     exit(0);
 }
@@ -50,7 +37,7 @@ void *handle_client(void *socket_desc) {
     char buffer[BUFFER_SIZE];
     int read_size;
 
-    const char *menu = "Welcome to the Childrens Bank of India\n"
+    const char *menu = "Welcome to the Bank of Banglore(IIIT)\n"
                        "=======================================================\n"
                        "Select an option:\n"
                        "1. Customer Login\n"
@@ -451,6 +438,7 @@ void *handle_client(void *socket_desc) {
                                         bzero(buffer, BUFFER_SIZE); // Clear the buffer
                                         usleep(100); // Add a slight delay to ensure data is fully sent before the next action
                                         send(new_socket, employee_menu, strlen(employee_menu), 0);
+                                        break;
                                     }
                                     case 3:
                                         // Show all loan applications
@@ -484,23 +472,23 @@ void *handle_client(void *socket_desc) {
                                     break;
                                     case 4:
                                         write(new_socket, "Enter Customer ID: ", 19);
-                                    read(new_socket, buffer, BUFFER_SIZE);
-                                    int customer_id = atoi(buffer);
+                                        read(new_socket, buffer, BUFFER_SIZE);
+                                        int customer_id = atoi(buffer);
 
-                                    if (view_customer_transactions(customer_id, new_socket)) {
-                                        send(new_socket, "Transaction history displayed.\n", 31, 0);
-                                    } else {
-                                        send(new_socket, "Failed to display transaction history.\n", 39, 0);
-                                    }
-                                    bzero(buffer, BUFFER_SIZE); // Clear the buffer
-                                    usleep(100); // Add a slight delay to ensure data is fully sent before the next action
-                                    send(new_socket, employee_menu, strlen(employee_menu), 0);
-                                    break;
+                                        if (view_customer_transactions(customer_id, new_socket)) {
+                                            send(new_socket, "Transaction history displayed.\n", 31, 0);
+                                        } else {
+                                            send(new_socket, "Failed to display transaction history.\n", 39, 0);
+                                        }
+                                        bzero(buffer, BUFFER_SIZE); // Clear the buffer
+                                        usleep(100);
+                                        send(new_socket, employee_menu, strlen(employee_menu), 0);
+                                        break;
                                     case 5:
                                         char new_password[50];
                                     write(new_socket, "Enter new password: ", 20);
                                     read(new_socket, new_password, 50);
-                                    new_password[strcspn(new_password, "\n")] = 0; // Removing the newline character from input
+                                    new_password[strcspn(new_password, "\n")] = 0;
 
                                     if (change_employee_password(employee_id, new_password)) {
                                         send(new_socket, "Password changed successfully.\n", 31, 0);
@@ -530,7 +518,6 @@ void *handle_client(void *socket_desc) {
                                             send(new_socket, menu, strlen(menu), 0);
                                         break;
                                 }
-                                break;
                             }
                         } else {
                             write(new_socket, "Login failed. Invalid credentials.\n", 35);
@@ -555,7 +542,7 @@ void *handle_client(void *socket_desc) {
                     const char *manager_menu = "Welcome Manager\n"
                                                "=======================================================\n"
                                                "Manager Options:\n"
-                                               "1. Activate/Deactivate Customer Accounts\n"
+                                               "1. (activate/deactivate)Modify Customer Accounts\n"
                                                "2. Assign Loan Application Processes to Employees\n"
                                                "3. Review Customer Feedback\n"
                                                "4. Change Password\n"

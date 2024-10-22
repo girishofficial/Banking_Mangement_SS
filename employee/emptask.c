@@ -87,29 +87,52 @@ int verify_employee(int employee_id, const char *password) {
 
 int add_new_customer(int id, const char *name, const char *email, const char *phone, const char *password, double balance, int account_active) {
     const char *file_path = "/home/girish-pc/projecter/db/customers.txt";
-    int fd = open(file_path, O_WRONLY | O_APPEND);
+    int fd = open(file_path, O_RDWR | O_APPEND);
     if (fd == -1) {
         perror("Failed to open file");
         return 0;
     }
 
-    Customer customer;
-    customer.id= id;
-    strncpy(customer.name, name, sizeof(customer.name) - 1);
-    strncpy(customer.email, email, sizeof(customer.email) - 1);
-    strncpy(customer.phone, phone, sizeof(customer.phone) - 1);
-    strncpy(customer.password, password, sizeof(customer.password) - 1);
-    customer.balance = balance;
-    customer.account_active = account_active;
+    // Apply a record lock
+    struct flock lock;
+    memset(&lock, 0, sizeof(lock));
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_END;
+    lock.l_start = 0;
+    lock.l_len = sizeof(Customer);
 
-    if (write(fd, &customer, sizeof(Customer)) == -1) {
-        perror("Failed to write to file");
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        perror("Failed to lock record");
         close(fd);
         return 0;
     }
 
+    Customer new_customer;
+    new_customer.id = id;
+    strncpy(new_customer.name, name, sizeof(new_customer.name) - 1);
+    new_customer.name[sizeof(new_customer.name) - 1] = '\0';
+    strncpy(new_customer.email, email, sizeof(new_customer.email) - 1);
+    new_customer.email[sizeof(new_customer.email) - 1] = '\0';
+    strncpy(new_customer.phone, phone, sizeof(new_customer.phone) - 1);
+    new_customer.phone[sizeof(new_customer.phone) - 1] = '\0';
+    strncpy(new_customer.password, password, sizeof(new_customer.password) - 1);
+    new_customer.password[sizeof(new_customer.password) - 1] = '\0';
+    new_customer.balance = balance;
+    new_customer.account_active = account_active;
+
+    if (write(fd, &new_customer, sizeof(Customer)) == -1) {
+        perror("Failed to write to file");
+        lock.l_type = F_UNLCK;
+        fcntl(fd, F_SETLK, &lock); // Unlock the record
+        close(fd);
+        return 0;
+    }
+
+    // Unlock the record
+    lock.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, &lock);
     close(fd);
-    return 1;
+    return 1; // Customer added successfully
 }
 
 int list_customers() {
@@ -141,19 +164,38 @@ int modify_customer_details(int customer_index, Customer *updated_customer) {
     Customer customer;
     int index = 1;
     off_t pos;
+    struct flock lock;
+    memset(&lock, 0, sizeof(lock));
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = customer_index * sizeof(Customer);
+    lock.l_len = sizeof(Customer);
+
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        perror("Failed to lock record");
+        close(fd);
+        return 0;
+    }
+
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &customer, sizeof(Customer)) > 0) {
         if (index++ == customer_index) {
             lseek(fd, pos, SEEK_SET);
             if (write(fd, updated_customer, sizeof(Customer)) == -1) {
                 perror("Failed to write to file");
+                lock.l_type = F_UNLCK;
+                fcntl(fd, F_SETLK, &lock); // Unlock the record
                 close(fd);
                 return 0;
             }
+            lock.l_type = F_UNLCK;
+            fcntl(fd, F_SETLK, &lock); // Unlock the record
             close(fd);
             return 1;
         }
     }
 
+    lock.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, &lock); // Unlock the record
     close(fd);
     return 0; // Customer not found
 }
@@ -203,17 +245,36 @@ int change_employee_password(int employee_id, const char *new_password) {
 
     Employee emp;
     off_t pos;
+    struct flock lock;
+    memset(&lock, 0, sizeof(lock));
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;
+
     while ((pos = lseek(fd, 0, SEEK_CUR)) != -1 && read(fd, &emp, sizeof(Employee)) > 0) {
         if (emp.id == employee_id) {
+            lock.l_start = pos;
+            lock.l_len = sizeof(Employee);
+
+            if (fcntl(fd, F_SETLKW, &lock) == -1) {
+                perror("Failed to lock record");
+                close(fd);
+                return 0;
+            }
+
             strncpy(emp.password, new_password, sizeof(emp.password) - 1);
             emp.password[sizeof(emp.password) - 1] = '\0'; // Ensure null-termination
 
             lseek(fd, pos, SEEK_SET);
             if (write(fd, &emp, sizeof(Employee)) == -1) {
                 perror("Failed to write to file");
+                lock.l_type = F_UNLCK;
+                fcntl(fd, F_SETLK, &lock); // Unlock the record
                 close(fd);
                 return 0;
             }
+
+            lock.l_type = F_UNLCK;
+            fcntl(fd, F_SETLK, &lock); // Unlock the record
             close(fd);
             return 1; // Password change successful
         }
