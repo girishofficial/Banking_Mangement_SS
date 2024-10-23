@@ -525,8 +525,8 @@ void *handle_client(void *socket_desc) {
                             usleep(100); // Ensure the message is fully sent
                             send(new_socket, menu, strlen(menu), 0);
                         }
+                        break;
                     }
-                break;
             case 3: {
                 write(new_socket, "Enter Manager Email: ", 21);
                 read(new_socket, email, 50);

@@ -63,6 +63,18 @@ int update_customer_status(int customer_id, int new_status) {
         return 0;
     }
 
+    struct flock lock;
+    lock.l_type = F_WRLCK; // Write lock
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 0; // Lock the whole file
+
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        perror("Failed to acquire lock");
+        close(fd);
+        return 0;
+    }
+
     Customer customer;
     while (read(fd, &customer, sizeof(Customer)) > 0) {
         if (customer.id == customer_id) {
@@ -73,15 +85,18 @@ int update_customer_status(int customer_id, int new_status) {
                 close(fd);
                 return 0;
             }
-            close(fd);
-            return 1;
+            break;
         }
     }
 
-    close(fd);
-    return 0; // Customer not found
-}
+    lock.l_type = F_UNLCK; // Unlock
+    if (fcntl(fd, F_SETLK, &lock) == -1) {
+        perror("Failed to release lock");
+    }
 
+    close(fd);
+    return 1; // Customer status updated successfully
+}
 int review_customer_feedback(int socket) {
     const char *file_path = "/home/girish-pc/projecter/db/feedback.txt";
     int fd = open(file_path, O_RDONLY);
@@ -117,6 +132,19 @@ int assign_employee_to_loan(int loan_id, int employee_id) {
         return 0;
     }
 
+    struct flock lock;
+    lock.l_type = F_WRLCK; // Write lock
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 0; // Lock the whole file
+
+    if (fcntl(fd, F_SETLKW, &lock) == -1) {
+        perror("Failed to acquire lock");
+        log_message("Failed to acquire lock on loans file");
+        close(fd);
+        return 0;
+    }
+
     LoanApplication loan;
     while (read(fd, &loan, sizeof(LoanApplication)) > 0) {
         if (loan.loan_id == loan_id) {
@@ -129,14 +157,18 @@ int assign_employee_to_loan(int loan_id, int employee_id) {
                 return 0;
             }
             log_message("Loan assignment successful");
-            close(fd);
-            return 1; // Assignment successful
+            break;
         }
     }
 
-    log_message("Loan not found");
+    lock.l_type = F_UNLCK; // Unlock
+    if (fcntl(fd, F_SETLK, &lock) == -1) {
+        perror("Failed to release lock");
+        log_message("Failed to release lock on loans file");
+    }
+
     close(fd);
-    return 0; // Loan not found
+    return 1; // Assignment successful
 }
 
 int change_manager_password(int employee_id, const char *new_password) {
