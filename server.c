@@ -615,7 +615,7 @@ void *handle_client(void *socket_desc) {
                                         if (modify_customer_details(customer_index, &customer)) {
                                             send(new_socket, "Customer details updated successfully.\n", 39, 0);
                                         } else {
-                                            send(new_socket, "Failed to update customer details.\n", 34, 0);
+                                            send(new_socket, "Failed to update customer details due to already being existed or wrong format.\n", 34, 0);
                                         }
                                     }
 
@@ -690,6 +690,7 @@ void *handle_client(void *socket_desc) {
                             write(new_socket, "Exiting...\n", 11);
                             close(new_socket);
                             exit(0);
+                            break;
                         } else {
                             write(new_socket, "Invalid option. Please select again\n", 37);
                         }

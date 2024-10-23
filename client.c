@@ -13,6 +13,8 @@
 
     void signal_handler(int sig) {
         printf("Received signal %d, closing client...\n", sig);
+        system("/home/girish-pc/projecter/cuslog");
+        system("/home/girish-pc/projecter/logemp");
         close(sock);
         exit(0);
     }
@@ -30,6 +32,7 @@
         system("clear");
         struct sockaddr_in server;
         signal(SIGINT, signal_handler);
+        signal(SIGTERM,signal_handler);
         char message[BUFFER_SIZE], server_reply[BUFFER_SIZE];
 
         sock = socket(AF_INET, SOCK_STREAM, 0);

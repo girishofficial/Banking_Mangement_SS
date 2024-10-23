@@ -84,8 +84,32 @@ int verify_employee(int employee_id, const char *password) {
     close(fd);
     return 0; // Verification failed
 }
+int check_customer_id_exists(int id) {
+    const char *file_path = "/home/girish-pc/projecter/db/customers.txt";
+    int fd = open(file_path, O_RDONLY);
+    if (fd == -1) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    Customer customer;
+    while (read(fd, &customer, sizeof(Customer)) > 0) {
+        if (customer.id == id) {
+            close(fd);
+            return 1; // Customer ID exists
+        }
+    }
+
+    close(fd);
+    return 0; // Customer ID does not exist
+}
 
 int add_new_customer(int id, const char *name, const char *email, const char *phone, const char *password, double balance, int account_active) {
+    if (check_customer_id_exists(id)) {
+        printf("Customer ID already exists. Please try again.\n");
+        return 0;
+    }
+
     const char *file_path = "/home/girish-pc/projecter/db/customers.txt";
     int fd = open(file_path, O_RDWR | O_APPEND);
     if (fd == -1) {
