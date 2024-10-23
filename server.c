@@ -17,8 +17,6 @@
 
 #define PORT 8087
 #define BUFFER_SIZE 102400
-#define RETRY_LIMIT 5
-#define RETRY_DELAY 2
 
 pthread_mutex_t customer_edit_mutex;
 
